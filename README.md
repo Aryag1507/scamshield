@@ -110,22 +110,39 @@ Caveats, honestly stated:
 
 ## Serving (`serve/`)
 
-FastAPI app running the model on CPU. Live at `https://aryag1507--scamshield-api-web.us-east.modal.run`.
+FastAPI app running the model on CPU, deployed on Modal: `https://aryag1507--scamshield-api-web.us-east.modal.run`.
 
-- `POST /check` returns the verdict and probabilities from a single forward pass; `POST /reason` generates the one-sentence explanation. The website shows the verdict first (~1s) and fills in the explanation (~5s) after.
-- Message text is never logged or stored; caches are keyed by SHA-256 and IPs are kept in memory only for rate limiting.
+| Endpoint | What it does |
+|---|---|
+| `POST /check` | Verdict + probabilities from one forward pass (~1s). `include_reason=false` skips the explanation. |
+| `POST /reason/stream` | The one-sentence explanation as Server-Sent Events, token by token (first words in ~0.7s). |
+| `POST /reason` | Same explanation, non-streaming. |
 
-Inference choices, benchmarked on 150 test messages on a 2-vCPU machine (`modal run serve/modal_serve.py::benchmark`):
+### Inference engine (`serve/engine.py`)
+
+One thread owns the model; requests never take a global lock.
+
+- **Verdicts are micro-batched:** every verdict waiting when the scheduler wakes is scored in one forward pass.
+- **Explanations use continuous batching:** each sequence keeps its own KV cache; every iteration prefills newly arrived requests, then advances *all* running sequences one token in a single batched forward pass (caches left-padded to a common length, decoded together, split back). A request arriving mid-generation joins the next step. Verified token-for-token identical to sequential greedy generation, including staggered arrivals.
+- **Streaming:** tokens are emitted as produced (multi-byte characters held until complete) and served as SSE.
+- **Shared prompt cache for verdicts:** the message is encoded once and its KV cache reused for the `scam` / `suspicious` / `safe` continuations (identical scores, ~2× faster than three passes).
+
+### Benchmarks (2-vCPU cloud machine, `modal run serve/modal_serve.py::benchmark`)
 
 | Setup | Accuracy | Verdict p50 | Verdict p90 | Peak memory |
 |---|---|---|---|---|
-| fp32, scoring each verdict separately (3 passes) | 82.7% | 3.1s | 12.0s | 4.1GB |
-| **fp32, message encoded once, KV cache shared across verdicts** | **82.7%** | **1.6s** | **4.9s** | **3.2GB** |
-| bf16 + shared cache | 82.7% | 8.4s | 30.5s | 3.5GB |
-| dynamic int8 (all Linear layers) | 34.7% | 1.8s | 7.5s | 6.0GB |
-| dynamic int8 (output head kept fp32) | 36.0% | 0.9s | 3.1s | 5.2GB |
+| fp32, each verdict scored separately (3 passes) | 82.7% | 3.1s | 12.0s | 4.1GB |
+| **fp32, shared prompt cache** (served) | **82.7%** | **1.6s** | **4.9s** | **3.2GB** |
+| bf16, shared cache | 82.7% | 8.4s | 30.5s | 3.5GB |
+| dynamic int8 (weights + activations) | 34.7% | 1.8s | 7.5s | 6.0GB |
+| dynamic int8, output head kept fp32 | 36.0% | 0.9s | 3.1s | 5.2GB |
 
-bf16 has no native support on typical server CPUs; dynamic int8 breaks this model's accuracy (outlier activations in the transformer layers), so the API serves fp32 with the shared prompt cache.
+8 explanations at once: **37.3s with continuous batching vs 54.7s one after another (1.47×)**. On 2 vCPUs, each request's prefill (reading the whole message) is compute-bound and can't be shared; the decode phase is what batching speeds up.
+
+Findings:
+- **Dynamic int8 breaks this model.** Small Qwen models have a few huge-magnitude activation channels; int8 activations can't represent them (accuracy 83% → 35%).
+- **Weight-only int8** (`serve/quant.py`: int8 weights with per-channel scales, fp32 activations, tied embedding/LM head sharing one int8 matrix) fixes accuracy and cuts weights 3.9×, and is fast on ARM. **But on the deployment CPU (AVX2 only, no AVX-512/VNNI) PyTorch's fused int8 kernel is 6× slower at decode and 46× slower at prefill than fp32** (`modal run serve/modal_serve.py::kernels`). Production stays fp32; `WEIGHTS=int8` is available for hardware with fast int8 kernels.
+- **bf16 is ~5× slower** without native bf16 instructions.
 
 ## Roadmap
 

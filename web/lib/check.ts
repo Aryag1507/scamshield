@@ -32,6 +32,48 @@ export async function fetchReason(req: CheckRequest & { verdict: Verdict }, sign
   return (await post<{ reason: string }>("/reason", req, signal)).reason;
 }
 
+/**
+ * Stream the explanation token by token (Server-Sent Events from /reason/stream).
+ * Calls onDelta with each new piece; resolves with the full text.
+ */
+export async function streamReason(
+  req: CheckRequest & { verdict: Verdict },
+  onDelta: (piece: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (!API_URL) throw new CheckError("The checker isn't connected yet.");
+  const res = await fetch(`${API_URL}/reason/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+    signal,
+  });
+  if (!res.ok || !res.body) throw new CheckError("Couldn't load the explanation.");
+
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  let full = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+    // SSE events are separated by a blank line; keep any partial event for the next chunk.
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+    for (const event of events) {
+      const data = event.replace(/^data: /, "");
+      if (!data) continue;
+      const msg = JSON.parse(data) as { delta?: string; done?: boolean; reason?: string };
+      if (msg.delta) {
+        full += msg.delta;
+        onDelta(msg.delta);
+      }
+      if (msg.done) return msg.reason ?? full.trim();
+    }
+  }
+  return full.trim();
+}
+
 async function post<T>(path: string, req: object, signal?: AbortSignal): Promise<T> {
   if (!API_URL) throw new CheckError("The checker isn't connected yet. Set NEXT_PUBLIC_API_URL.");
   let res: Response;

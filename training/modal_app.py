@@ -12,8 +12,13 @@ Then, from training/:
   modal run modal_app.py --stage train --run-name sft-0.5b-v2 --gpu H100    # ~5x faster, for the full dataset / bigger models
   modal run modal_app.py --stage eval  --run-name sft-0.5b-v1
   modal run modal_app.py --stage push  --run-name sft-0.5b-v1 --repo-id <hf-user>/scamshield-0.5b
+
+GRPO post-training (needs a Modal secret "anthropic-secret" with ANTHROPIC_API_KEY, for the judge):
+  modal run --detach modal_app.py --stage grpo --run-name grpo-0.5b-v1 --from-run sft-0.5b-v1
+  modal run modal_app.py --stage eval-reasons --run-name sft-0.5b-v1     # explanation-quality baseline
 """
 
+import json
 import subprocess
 import time
 from pathlib import Path
@@ -30,13 +35,15 @@ hf_cache = modal.Volume.from_name("hf-cache", create_if_missing=True)
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("torch==2.8.0", "transformers==4.57.1", "accelerate==1.10.1", "wandb==0.22.2", "huggingface_hub==0.35.3")
+    .pip_install("torch==2.8.0", "transformers==4.57.1", "accelerate==1.10.1", "wandb==0.22.2", "huggingface_hub==0.35.3",
+                 "anthropic==1.15.0")
     .env({"HF_HOME": "/hf-cache", "TOKENIZERS_PARALLELISM": "false"})
-    .add_local_python_source("common", "scorer", "train_sft", "eval_model")
+    .add_local_python_source("common", "scorer", "train_sft", "eval_model", "judge", "grpo", "eval_reasons")
 )
 
 volumes = {VOL_PATH: vol, "/hf-cache": hf_cache}
 secrets = [modal.Secret.from_name("huggingface-secret"), modal.Secret.from_name("wandb-secret")]
+judge_secrets = secrets + [modal.Secret.from_name("anthropic-secret")]
 
 
 def run(cmd: list[str], done_marker: str | None = None, grace_s: int = 300) -> None:
@@ -83,6 +90,29 @@ def evaluate(model: str, out_dir: str, limit: int | None = None):
     return Path(out_dir, "metrics.json").read_text()
 
 
+@app.function(image=image, gpu="L4", volumes=volumes, secrets=judge_secrets, timeout=8 * 3600)
+def grpo(run_name: str, from_run: str, steps: int):
+    """GRPO from an SFT checkpoint, then verdict eval + explanation eval, all in one container."""
+    run_dir = f"{VOL_PATH}/runs/{run_name}"
+    run(["python", "-m", "grpo", "--policy", f"{VOL_PATH}/runs/{from_run}/final", "--data-dir", f"{VOL_PATH}/data",
+         "--output-dir", run_dir, "--steps", str(steps)], done_marker=f"{run_dir}/final/TRAINING_COMPLETE")
+    vol.commit()
+    run(["python", "-m", "eval_model", "--model", f"{run_dir}/final", "--data-dir", f"{VOL_PATH}/data", "--out-dir", f"{run_dir}/eval"])
+    vol.commit()
+    run(["python", "-m", "eval_reasons", "--model", f"{run_dir}/final", "--data-dir", f"{VOL_PATH}/data",
+         "--out", f"{run_dir}/eval/reasons.json"])
+    vol.commit()
+
+
+@app.function(image=image, gpu="L4", volumes=volumes, secrets=judge_secrets, timeout=3600)
+def eval_reasons(run_name: str) -> str:
+    vol.reload()
+    out = f"{VOL_PATH}/runs/{run_name}/eval/reasons.json"
+    run(["python", "-m", "eval_reasons", "--model", f"{VOL_PATH}/runs/{run_name}/final", "--data-dir", f"{VOL_PATH}/data", "--out", out])
+    vol.commit()
+    return Path(out).read_text()
+
+
 @app.function(image=image, secrets=secrets, timeout=300)
 def check_secrets() -> dict:
     """Report which expected env vars the secrets provide (presence only, never values)."""
@@ -118,7 +148,7 @@ def push(run_name: str, repo_id: str, card: str):
 @app.local_entrypoint()
 def main(stage: str, run_name: str = "sft-0.5b-v1", base_model: str = "Qwen/Qwen2.5-0.5B-Instruct",
          epochs: float = 2.0, lr: float = 2e-5, repo_id: str = "", max_train: int = 0, limit: int = 0,
-         gpu: str = "L4"):
+         gpu: str = "L4", from_run: str = "sft-0.5b-v1", steps: int = 150):
     data_dir = Path(__file__).parent / "data"
     if stage == "check":
         print(check_secrets.remote())
@@ -137,6 +167,12 @@ def main(stage: str, run_name: str = "sft-0.5b-v1", base_model: str = "Qwen/Qwen
     elif stage == "eval":
         call = evaluate.spawn(f"{VOL_PATH}/runs/{run_name}/final", f"{VOL_PATH}/runs/{run_name}/eval", limit or None)
         print(f"spawned eval call {call.object_id}: results -> {VOL_PATH}/runs/{run_name}/eval/metrics.json")
+    elif stage == "grpo":
+        call = grpo.with_options(gpu=gpu).spawn(run_name, from_run, steps)
+        print(f"spawned GRPO call {call.object_id}: {call.get_dashboard_url()}")
+    elif stage == "eval-reasons":
+        report = json.loads(eval_reasons.remote(run_name))
+        print(f"{run_name}: explanation quality {report['mean_quality']:.3f} (perfect {report['share_perfect']:.0%}, poor {report['share_poor']:.0%})")
     elif stage == "push":
         assert repo_id, "--repo-id required"
         push.remote(run_name, repo_id, (Path(__file__).parent / "MODEL_CARD.md").read_text())

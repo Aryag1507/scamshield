@@ -1,0 +1,190 @@
+{
+  "model": "/vol/runs/sft-0.5b-v1/final",
+  "n": 150,
+  "graded": 150,
+  "mean_quality": 0.7733333333333332,
+  "share_perfect": 0.10666666666666667,
+  "share_poor": 0.04,
+  "samples": [
+    {
+      "verdict": "scam",
+      "reason": "Classic job-seeker recruitment spam: unsolicited offer from an unknown sender asking for a personal interview at a Walla.com address, with a vague 'confirm your participation' link and a free-webmail contact; likely lead-harvesting fraud.",
+      "score": 0.6,
+      "input": "Channel: email\n\noportunidad de trabajo - - esta es una respuesta autom\u00e1tica - - al mensaje generado en nombre de oportunidadhbl @ walla . com estimado ( a ) postulante : ud . recibe esta informacion desde nuestro registros , y a quedado sel"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Fake Cash App payment that requires identity confirmation on a non-Cash App domain, with an expiry deadline designed to rush the victim into entering details.",
+      "score": 1.0,
+      "input": "Channel: sms\nFrom: +1 437 555 0192\n\nYour Cash App payment of $1,240.00 is pending. Confirm your identity to release funds: cash-app-release-ca.com/claim. Expires in 2 hrs."
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited pharmacy spam pushing discounted prescription drugs (Viagra-style brand names) with obfuscated spelling, urgency ('moneyy'), and an unverifiable 'no-re move' claim; likely illegal online pharmacy fraud.",
+      "score": 0.7,
+      "input": "Channel: email\n\nviicodin only $ 149 4 zui huge meds to choose at great discounts . save uup to 8 o - % on all major brands of meds . qualitty assured or moneyy bacck guarranteedd . . . this is 1 - time mailing . no - re moval are re ' qui -"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited software sales pitch with urgency ('ORDER NOW'), a 'CLICK HERE' link, and an opt-out code; no credential or payment theft requested, so mostly unwanted marketing rather than fraud.",
+      "score": 0.7,
+      "input": "Channel: email\n\nNorton AD\n\u00c2\u00a0\n ATTENTION:\n This is a MUST for ALL Computer Users!!!\n\u00c2\u00a0*NEW\n - Special Package Deal!*\nNorton\n SystemWorks 2002 Software Suite\n -Professional Edition-\nIncludes\n Six - Yes 6! - Feature-Packed UtilitiesALL\n for 1\n"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited prize win notice demanding a callback to an unknown number between specific hours, a classic advance-fee lottery fraud pattern.",
+      "score": 0.8,
+      "input": "Channel: email\n\nPlease call our customer service representative on FREEPHONE 0808 145 4744 between 9am-11pm as you have WON a guaranteed \u00a33000 cash or \u00a37000 prize!"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited pharmacy spam pushing controlled drugs (Xanax, Valium) without prescriptions, with obfuscated spelling and an unverifiable link; likely illegal online pharmacy fraud.",
+      "score": 1.0,
+      "input": "Channel: email\n\nget xanax , val\u00edum over night - no prescription necessary up to 80 % savings on xanax , valium , cialis , viagra , tylenol 3 & more here for email removal , go here . elm bricklay taxied lase lotte january quail humpback did"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited email pushing an unexplained link (bisops.com/nrmm.htm) with urgency-free but garbled text and no clear sender identity; likely spam, though no payment or credential request is visible.",
+      "score": 0.7,
+      "input": "Channel: email\n\nh . g . h - as seen on oprah and cnbc ! amazing ! want to be dropped from our list ? do not reply to this email . copy and paste this link into your browser - bisops . com / nrmm . htm computer technologies 848 n . rainbow b"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited adult-content spam with obfuscated, garbled text, an unexplained external link (sexdirecti.info) to an unknown domain, and pressure to click; typical of malicious redirect lures.",
+      "score": 0.8,
+      "input": "Channel: email\n\nhot _ sexdifferentiable - - = = - home - porno - = = - - http : / / bjpdxbqeze . sexdirecti . info / hompr 2 do you remember your childhod with all it ' s fears and fantasies ? would you like to remind yourself feels and sen"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited HGH (human growth hormone) marketing spam with obfuscated text, an unexplained external link to medsforyou.info, and random word padding typical of filter evasion; likely fraudulent supplement sales.",
+      "score": 0.7,
+      "input": "Channel: email\n\nmore energy ! body bgcolor = black table bgcolor = white cellpadding = 10 align = centertrtd valign = top width = 117 align = centertable border = 1 trtd align = center width = 115 a href = http : / / medsforyou . info / hgh"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited loan refinance pitch with implausible savings claims (save thousands), urgency ('only takes 2 minutes'), and an unexplained online questionnaire; typical spam rather than clear fraud.",
+      "score": 0.8,
+      "input": "Channel: email\n\n92 - home loans as now at 3 . 95 % g ' day would you reflnance if you knew you ' d save thousands ? we ' ll get you lnterest as low as 3 . 96 % . don ' t believe me ? fill out our small online questionaire and we ' ll show y"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited prize SMS promising a \u00a31000 holiday for claiming a premium-rate 087 number at 10p per minute, a classic advance-fee or subscription fraud pattern.",
+      "score": 1.0,
+      "input": "Channel: sms\n\nYou are a winner U have been specially selected 2 receive \u00a31000 or a 4* holiday (flights inc) speak to a live operator 2 claim 0871277810910p/min (18+)"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Garbled spam-style text with random words and no clear sender identity; likely unwanted marketing spam rather than clear fraud, though the garbled content is odd.",
+      "score": 0.6,
+      "input": "Channel: email\n\nre [ 5 ] : question about our progs mult gua msof re ! ilan geoe twa nonee it 2 - ksforc very ! dtowa 3 wee ddeli avai dia nloa bleforimme tedow d cli etoge sho . e lea ckher tfre . mrel ses fro ldkno nds : mic oft , sym ec "
+    },
+    {
+      "verdict": "scam",
+      "reason": "Impersonates ComBank with an unverifiable 'you' sender claim, a fake link to a non-Bank domain, and urgency about a completed transaction; classic bank impersonation fraud pattern.",
+      "score": 0.8,
+      "input": "Channel: email\n\nyou'hv completed a transaction for AUD 788.93 on 06/02/17 03-27-31 pm. Please follow the link if it is not done by you http://commbank.netban"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited romance-scam pitch with vague 'send this to friends' link and no verifiable sender or clear fraud request; unwanted spam but no explicit payment or credential theft.",
+      "score": 0.7,
+      "input": "Channel: email\n\n34000 of pple marry with their lovers... becz they hav gud undrstndng dat avoids problems. i sent dis 2 u, u wil get gud news on friday by d person you like. And tomorrow will be the best day of your life. Dont break this ch"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited prize claim demanding a callback to an unknown number (10am-9pm) for a fake 'guaranteed' cash prize, a classic advance-fee lottery fraud pattern.",
+      "score": 0.9,
+      "input": "Channel: email\n\nPlease call our customer service representative on 6200992462 between 10am-9pm as you have W0N a guaranteed cash prize of Rs.8,00,000 FL1PKART TEAM"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited SMS pushing cheap mobile phones via an unverified shortcode (89545) and a premium-rate opt-out line, with a per-message charge; classic premium-SMS fraud pattern.",
+      "score": 1.0,
+      "input": "Channel: sms\n\nNew Mobiles from 2004, MUST GO! Txt: NOKIA to No: 89545 & collect yours today! From ONLY \u00a31. www.4-tc.biz 2optout 087187262701.50gbp/mtmsg18 TXTAUCTION."
+    },
+    {
+      "verdict": "scam",
+      "reason": "Impersonates a staffing contact, invents an accidental transfer, and uses a same-day deadline to pressure quick reversal.",
+      "score": 0.9,
+      "input": "Channel: sms\nFrom: +1 (647) 555-0148\n\nHi Jordan, this is Priya from Maple Staffing. I accidentally sent $850 to your Zelle instead of a colleague. Can you send it back today? I'm getting penalized by payroll if it's not reversed by 5pm. Tha"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited adult-content spam with obfuscated text, a suspicious unexplained link (lovemenow.com), and a 'free 3-day trial' lure; likely unwanted marketing rather than clear credential or money theft.",
+      "score": 0.8,
+      "input": "Channel: email\n\nguess who ? ! ? - oqth http : / / www . lovemenow . com the material on this server is adult oriented and / or sexually explicit , and is related to material of an adult nature . this site provides access to images of nude a"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Lookalike domain, fake 3-day deadline, and a request for postal proof and login credentials are classic eBay impersonation signals.",
+      "score": 1.0,
+      "input": "Channel: email\nFrom: support@ebay-uk-buyerprotect.com\nSubject: Dispute opened on your listing - respond now\n\nA buyer has opened a dispute on your recent sale. You have 3 days to respond or the dispute will be decided in their favour and fun"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Classic advance-fee lottery fraud: unsolicited prize win, demands secrecy, asks for phone/fax contacts, uses a free webmail-style domain, and promises huge returns by Friday.",
+      "score": 0.8,
+      "input": "Channel: email\n\nfinal winning notification . final winning notification . from : international lottery award board el gordo de la primitiva lotto email : primitivalottery @ consultant . com ref n - fj - 546465 - 00153 , batch n - 005684 - 9"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Classic pump-and-dump stock promotion: paid penny-stock compensation ($3,000), hype-driven 'poised' claims, urgency ('act now'), and a Yahoo contact address; signals of fraud and manipulation.",
+      "score": 1.0,
+      "input": "Channel: email\n\nhigh voiume bounce on this stock wysak petroleum ( wysk ) current price : o . 1 o apr 25 , 2005 - - wysak petroieum is pieased to report that due diligence is neariy compiete in regards to the company ' s further planned | e"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited extended auto warranty pitch with urgency ('don't wait until it is too late'), unverifiable 'nobs' (financial protection), and a vague 'click here' link; typical spam rather than clear fraud.",
+      "score": 0.7,
+      "input": "Channel: email\n\nwhy does your vehicle make that noise ? aak protect your financial well - being . purchase an extended auto warranty for your vehicle today . click here for your free , fast , no bs rates now ! ! car troubles and expensive r"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Claims a mistaken payment and asks for an immediate return of money to a free email address, which is a common way to avoid verification.",
+      "score": 0.9,
+      "input": "Channel: sms\nFrom: +1 613 555 0108\n\nHello, my name is Tyler. I need you to check your Zelle. Money came in for you yesterday, I sent it by mistake. Please send $700 back to tyler.ken.payments@gmail.com ASAP. I'm really stressed, sorry!"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited email pushing cheap OEM software via an unverified link; no payment request or credential ask, but it is pushy marketing spam rather than clear fraud.",
+      "score": 0.7,
+      "input": "Channel: email\n\nsave your money by getting an oem software ! need in software for your pc ? just visit our site , we might have what you need . . . best regards , chrissy"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Impersonates a recruiter, invents an unexpected payroll discrepancy, and uses urgency to force quick return of money.",
+      "score": 0.9,
+      "input": "Channel: sms\nFrom: +1 780 555 0144\n\nHi! This is Dana with the hiring team at Northfield Logistics. Payroll sent $920 to your Zelle by error. Please return it today so your first paycheque isn't delayed. Thank you!"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Classic advance-fee inheritance fraud: unsolicited claim of a dead husband's $25.5M fortune, requests for money, codes, and an unverifiable contact, plus a free-site link (freeserve.com) and pressure to act now.",
+      "score": 0.8,
+      "input": "Channel: email\n\ni need your help plz attn ; this proposal to you is , with due respect . sorry at thisperceived confusion or stress you may have receivingthis letter from me , since we have not known ourselvesor met previously . despite tha"
+    },
+    {
+      "verdict": "suspicious",
+      "reason": "Unsolicited HGH supplement marketing with unverifiable claims like 'reversing aging' and 'burning fat,' plus a vague 'click here' link; unwanted but no clear credential or payment theft request.",
+      "score": 0.9,
+      "input": "Channel: email\n\nreverse aging while burning fat the following message was sent to you as an opt - in subscriber to enetwork . we will continue to bring you valuable offers on the products and services that interest you most . if you wish to"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited webcam solicitation from an unknown sender using a non-official link (sabra.skipgrand.info) with urgency ('see you soon') and a fake 'verify your age' request; classic adult-content fraud pattern.",
+      "score": 0.8,
+      "input": "Channel: email\n\nyoooo : ) whats up . . . . or down for the matter of fact : ] . anyways hi , i am julie . my birthday was not to long ago . i turned 18 . i am a senior high school student . i love animals and cute bunnys , but most of all i"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Unsolicited breast-enlargement pitch with exaggerated claims, unverifiable 'guaranteed' results, a generic 'click here' link, and an opt-out address; typical of fraudulent supplement sales.",
+      "score": 0.8,
+      "input": "Channel: email\n\nGuaranteed to increase, lift and firm your\nbreasts in 60 days or your money back!!100% herbal and natural. Proven formula since 1996. \nIncrease your bust by 1 to 3 sizes within 30-60 days \nand be all natural. Click here:\nhtt"
+    },
+    {
+      "verdict": "scam",
+      "reason": "Fake pending-deposit claim on a non-Cash App domain, asking for tap-to-verify action, is a classic account takeover tactic.",
+      "score": 1.0,
+      "input": "Channel: sms\nFrom: https://cashapp-pending-ca.co/review\n\nCash App: You have a pending deposit of $2,300.00 from an employer. Review and accept within 30 minutes or it will be returned to sender. Tap to verify."
+    }
+  ]
+}

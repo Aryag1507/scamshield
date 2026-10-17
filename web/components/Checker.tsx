@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { type Channel, type CheckResult, CheckError, checkMessage, fetchReason } from "@/lib/check";
+import { type Channel, type CheckResult, CheckError, checkMessage, fetchReason, streamReason } from "@/lib/check";
 import { parsePasted } from "@/lib/detect";
 import { EXAMPLES, type Example } from "@/lib/examples";
 import { VerdictCard } from "./VerdictCard";
@@ -19,7 +19,7 @@ const SLOW_AFTER_MS = 3000;
 
 type Status = { kind: "idle" } | { kind: "loading"; slow: boolean } | { kind: "done"; result: CheckResult } | { kind: "error"; message: string };
 // Kept apart from Status so the explanation arriving doesn't re-trigger scroll/focus.
-export type ReasonState = { kind: "none" } | { kind: "loading" } | { kind: "ready"; text: string };
+export type ReasonState = { kind: "none" } | { kind: "loading" } | { kind: "streaming"; text: string } | { kind: "ready"; text: string };
 
 export function Checker() {
   const [text, setText] = useState("");
@@ -94,7 +94,14 @@ export function Checker() {
         setStatus({ kind: "done", result });
         if (result.verdict !== "safe") {
           setReason({ kind: "loading" });
-          fetchReason({ ...body, verdict: result.verdict }, controller.signal)
+          const reasonReq = { ...body, verdict: result.verdict };
+          let streamed = "";
+          streamReason(reasonReq, (piece) => {
+            streamed += piece;
+            setReason({ kind: "streaming", text: streamed });
+          }, controller.signal)
+            // If streaming isn't possible (e.g. a proxy buffers it), fall back to one request.
+            .catch((e) => (controller.signal.aborted ? Promise.reject(e) : fetchReason(reasonReq, controller.signal)))
             .then((text) => setReason({ kind: "ready", text }))
             .catch(() => !controller.signal.aborted && setReason({ kind: "none" })); // verdict still stands
         }

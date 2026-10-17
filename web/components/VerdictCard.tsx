@@ -46,8 +46,13 @@ export function VerdictCard({ result, reason }: { result: CheckResult; reason: R
           <h2 id="verdict-title" tabIndex={-1} className="text-lg font-semibold tracking-tight outline-none sm:text-xl">
             {copy.title}
           </h2>
-          {reason.kind === "ready" && (
-            <p className="mt-1 text-[15px] leading-relaxed text-foreground motion-safe:animate-rise">{reason.text}</p>
+          {(reason.kind === "ready" || reason.kind === "streaming") && (
+            <p className="mt-1 text-[15px] leading-relaxed text-foreground" aria-busy={reason.kind === "streaming"}>
+              {reason.text}
+              {reason.kind === "streaming" && (
+                <span aria-hidden="true" className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[3px] bg-current opacity-60 motion-safe:animate-pulse" />
+              )}
+            </p>
           )}
           {reason.kind === "loading" && (
             <div className="mt-2 space-y-2" aria-label="Explaining the warning signs">

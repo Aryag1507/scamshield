@@ -33,6 +33,8 @@ image = (
     .env({"HF_HOME": "/models", "TOKENIZERS_PARALLELISM": "false", "SCAMSHIELD_MODEL": MODEL_ID})
     .run_function(download_model)
     .add_local_file(HERE / "app.py", "/root/app.py")
+    .add_local_file(HERE / "engine.py", "/root/engine.py")
+    .add_local_file(HERE / "quant.py", "/root/quant.py")
     .add_local_file(HERE.parent / "training" / "common.py", "/root/common.py")
     .add_local_file(HERE.parent / "training" / "scorer.py", "/root/scorer.py")
 )
@@ -64,13 +66,18 @@ def bench(variant: str, rows: list[dict], reason_samples: int = 10) -> dict:
     path = snapshot_download(MODEL_ID, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
     dtype = torch.bfloat16 if variant == "bf16" else torch.float32
     scorer = Scorer(path, device="cpu", dtype=dtype)
-    if variant == "int8-keep-head":
-        # Quantize the transformer's Linear layers but keep the output head at full precision.
-        qcfg = torch.ao.quantization.default_dynamic_qconfig
-        spec = {name: qcfg for name, m in scorer.model.named_modules() if isinstance(m, torch.nn.Linear) and name != "lm_head"}
-        scorer.model = torch.ao.quantization.quantize_dynamic(scorer.model, spec, dtype=torch.qint8)
+    if variant == "int8-weight-only":
+        from quant import quantize_model_int8
+
+        quantize_model_int8(scorer.model)
+        import gc
+
+        gc.collect()
 
     scorer.verdict_probs([rows[0]["prompt"]])  # warm-up
+    # Steady-state resident memory once the model is ready (peak RSS also counts the fp32
+    # load that int8 quantizes from; a server could quantize offline and load int8 directly).
+    steady_rss_mb = next(int(line.split()[1]) // 1024 for line in open("/proc/self/status") if line.startswith("VmRSS"))
     probs, verdict_ms = [], []
     for r in rows:
         start = time.perf_counter()
@@ -82,7 +89,25 @@ def bench(variant: str, rows: list[dict], reason_samples: int = 10) -> dict:
         scorer.reason(r["prompt"], "scam")
         reason_ms.append((time.perf_counter() - start) * 1000)
     verdict_ms.sort()
+
+    # Continuous batching: 8 explanations requested at once vs. the same 8 one after another.
+    from engine import Engine
+
+    texts = [scorer.chat_prefix(r["prompt"]) + "scam\nReason:" for r in rows[:8]]
+    engine = Engine(scorer, max_batch=8)
+    start = time.perf_counter()
+    for t in texts:
+        engine.generate(t).result()
+    sequential_s = time.perf_counter() - start
+    start = time.perf_counter()
+    futures = [engine.generate(t) for t in texts]
+    for f in futures:
+        f.result()
+    concurrent_s = time.perf_counter() - start
+
     return {
+        "sequential_8_reasons_s": round(sequential_s, 1),
+        "concurrent_8_reasons_s": round(concurrent_s, 1),
         "variant": variant,
         "probs": probs,
         "verdict_ms_p50": round(verdict_ms[len(verdict_ms) // 2]),
@@ -90,11 +115,41 @@ def bench(variant: str, rows: list[dict], reason_samples: int = 10) -> dict:
         "verdict_ms_max": round(verdict_ms[-1]),
         "reason_ms_avg": round(sum(reason_ms) / len(reason_ms)),
         "peak_rss_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024),
+        "steady_rss_mb": steady_rss_mb,
     }
 
 
+@app.function(image=image, cpu=CPU, memory=MEMORY_MB, timeout=600)
+def kernel_bench() -> dict:
+    """Time one Qwen2.5-0.5B MLP-sized matmul: fp32 vs int8 weight-only, decode (M=1) and prefill (M=512)."""
+    import torch
+
+    torch.set_num_threads(int(CPU))
+    flags = next((line for line in open("/proc/cpuinfo") if line.startswith("flags")), "")
+    model_name = next((line.split(":", 1)[1].strip() for line in open("/proc/cpuinfo") if line.startswith("model name")), "?")
+    out = {"cpu": model_name, "isa": [f for f in ("avx2", "avx512f", "avx512_vnni", "avx512_bf16", "amx_int8", "amx_bf16") if f" {f}" in flags]}
+    w = torch.randn(4864, 896)
+    scale = (w.abs().amax(dim=1) / 127).clamp(min=1e-8)
+    q = torch.round(w / scale[:, None]).clamp(-127, 127).to(torch.int8)
+    for m in (1, 512):
+        x = torch.randn(m, 896)
+        for name, fn in (("fp32", lambda: x @ w.T), ("int8", lambda: torch.ops.aten._weight_int8pack_mm(x, q, scale))):
+            fn()
+            reps = 50 if m == 1 else 5
+            start = time.perf_counter()
+            for _ in range(reps):
+                fn()
+            out[f"{name}_M{m}_ms"] = round((time.perf_counter() - start) / reps * 1000, 3)
+    return out
+
+
 @app.local_entrypoint()
-def benchmark(n: int = 150, variants: str = "fp32,bf16,int8-keep-head"):
+def kernels():
+    print(json.dumps(kernel_bench.remote(), indent=2))
+
+
+@app.local_entrypoint()
+def benchmark(n: int = 150, variants: str = "fp32,int8-weight-only"):
     from scorer import decide  # local import: training/ is on sys.path via PYTHONPATH
 
     data = HERE.parent / "training" / "data"
@@ -102,10 +157,18 @@ def benchmark(n: int = 150, variants: str = "fp32,bf16,int8-keep-head"):
     random.Random(0).shuffle(rows)
     rows = rows[:n]
     t = json.loads((data.parent / "results" / "sft-0.5b-v1_metrics.json").read_text())["thresholds"]
-    results = {r["variant"]: r for r in bench.starmap([(v, rows) for v in variants.split(",")])}
+    names = variants.split(",")
+    # return_exceptions: one variant timing out must not discard the others' results.
+    outcomes = list(bench.starmap([(v, rows) for v in names], return_exceptions=True))
+    results = {}
+    for name, r in zip(names, outcomes):
+        if isinstance(r, BaseException):
+            print(f"{name:16s} FAILED: {type(r).__name__}: {str(r)[:120]}")
+        else:
+            results[name] = r
 
     ref = results.get("fp32")
-    print(f"{'variant':16s} {'acc':>6s} {'agree':>6s} {'max dp':>7s} {'p50 ms':>7s} {'p90 ms':>7s} {'max ms':>7s} {'reason':>7s} {'RSS MB':>7s}")
+    print(f"{'variant':16s} {'acc':>6s} {'agree':>6s} {'max dp':>7s} {'p50 ms':>7s} {'p90 ms':>7s} {'max ms':>7s} {'reason':>7s} {'peakMB':>7s} {'steadyMB':>8s}")
     for v, r in results.items():
         verdicts = [decide(p, t["scam"], t["suspicious"]) for p in r["probs"]]
         acc = sum(a == row["verdict"] for a, row in zip(verdicts, rows)) / len(rows)
@@ -115,4 +178,5 @@ def benchmark(n: int = 150, variants: str = "fp32,bf16,int8-keep-head"):
             dp = max(abs(a["scam"] - b["scam"]) for a, b in zip(r["probs"], ref["probs"]))
         else:
             agree, dp = float("nan"), float("nan")
-        print(f"{v:16s} {acc:6.1%} {agree:6.1%} {dp:7.3f} {r['verdict_ms_p50']:7d} {r['verdict_ms_p90']:7d} {r['verdict_ms_max']:7d} {r['reason_ms_avg']:7d} {r['peak_rss_mb']:7d}")
+        print(f"{v:16s} {acc:6.1%} {agree:6.1%} {dp:7.3f} {r['verdict_ms_p50']:7d} {r['verdict_ms_p90']:7d} {r['verdict_ms_max']:7d} {r['reason_ms_avg']:7d} {r['peak_rss_mb']:7d} {r['steady_rss_mb']:8d}"
+              f"   8 reasons: sequential {r['sequential_8_reasons_s']}s, concurrent {r['concurrent_8_reasons_s']}s")
