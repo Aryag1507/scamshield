@@ -27,38 +27,50 @@ class Scorer:
 
     @torch.no_grad()
     def verdict_probs(self, prompts: list[str]) -> list[dict[str, float]]:
-        """P(verdict | message) for each prompt, normalized over the three verdicts."""
-        seqs, cand_lens = [], []
-        for p in prompts:
-            prefix_ids = self.tok(self.chat_prefix(p), add_special_tokens=False)["input_ids"]
-            for v in VERDICTS:
-                cand_ids = self.tok(v + "\n", add_special_tokens=False)["input_ids"]
-                seqs.append(prefix_ids + cand_ids)
-                cand_lens.append(len(cand_ids))
+        """P(verdict | message) for each prompt, normalized over the three verdicts.
 
-        # Left-pad so every candidate ends at the last position, then only compute vocab
-        # logits for the last few positions. Full-sequence logits over a 150k vocab would
-        # need tens of GB for a batch of long emails.
-        max_len, pad = max(map(len, seqs)), self.tok.pad_token_id
-        input_ids = torch.tensor([[pad] * (max_len - len(s)) + s for s in seqs], device=self.device)
-        attn = torch.tensor([[0] * (max_len - len(s)) + [1] * len(s) for s in seqs], device=self.device)
-        position_ids = (attn.cumsum(-1) - 1).clamp(min=0)
-        keep = max(cand_lens) + 1
-        logits = self.model(input_ids=input_ids, attention_mask=attn, position_ids=position_ids, logits_to_keep=keep).logits
-        logprobs = torch.log_softmax(logits.float(), dim=-1)  # [batch, keep, vocab]
+        The message is encoded once and its KV cache is shared by the three verdict
+        continuations, so a check costs about one forward pass over the message instead
+        of three. Only the logits actually scored are computed (a full 150k-vocab logit
+        tensor per position would need GBs for long emails).
+        """
+        n_v, pad = len(VERDICTS), self.tok.pad_token_id
+        cands = [self.tok(v + "\n", add_special_tokens=False)["input_ids"] for v in VERDICTS]
+        prefixes = [self.tok(self.chat_prefix(p), add_special_tokens=False)["input_ids"] for p in prompts]
 
-        scores = []
-        for i, n in enumerate(cand_lens):
-            # Logits at position t predict token t+1: the n candidate tokens are predicted by
-            # kept positions keep-n-1 .. keep-2.
-            targets = input_ids[i, max_len - n :]
-            scores.append(logprobs[i, keep - n - 1 : keep - 1].gather(-1, targets[:, None]).sum().item())
+        # 1) Encode each message once (left-padded so every row ends at the last position).
+        P = max(map(len, prefixes))
+        ids = torch.tensor([[pad] * (P - len(x)) + x for x in prefixes], device=self.device)
+        attn = torch.tensor([[0] * (P - len(x)) + [1] * len(x) for x in prefixes], device=self.device)
+        out = self.model(input_ids=ids, attention_mask=attn, position_ids=(attn.cumsum(-1) - 1).clamp(min=0),
+                         use_cache=True, logits_to_keep=1)
+        first = torch.log_softmax(out.logits[:, -1].float(), dim=-1)  # predicts each candidate's first token
+        scores = torch.stack([first[:, c[0]] for c in cands], dim=1)  # [B, n_v]
 
-        out = []
-        for j in range(len(prompts)):
-            s = torch.tensor(scores[j * len(VERDICTS) : (j + 1) * len(VERDICTS)])
-            out.append(dict(zip(VERDICTS, torch.softmax(s, 0).tolist())))
-        return out
+        # 2) Score the rest of each verdict line against the shared cache.
+        rest = max(len(c) for c in cands) - 1
+        if rest > 0:
+            B = len(prompts)
+            cache = out.past_key_values
+            cache.batch_repeat_interleave(n_v)  # rows: p0v0, p0v1, p0v2, p1v0, ...
+            # Feed tokens 0..L-2 of each candidate to predict tokens 1..L-1 (right-padded).
+            inp = torch.tensor([c[:-1] + [pad] * (rest - len(c) + 1) for c in cands], device=self.device).repeat(B, 1)
+            cmask = torch.tensor([[1] * (len(c) - 1) + [0] * (rest - len(c) + 1) for c in cands], device=self.device).repeat(B, 1)
+            prefix_len = attn.sum(-1).repeat_interleave(n_v)
+            logits = self.model(
+                input_ids=inp,
+                attention_mask=torch.cat([attn.repeat_interleave(n_v, dim=0), cmask], dim=1),
+                position_ids=prefix_len[:, None] + torch.arange(rest, device=self.device)[None],
+                past_key_values=cache,
+            ).logits
+            lp = torch.log_softmax(logits.float(), dim=-1)  # [B * n_v, rest, vocab]
+            for j, c in enumerate(cands):
+                if len(c) > 1:
+                    rows = torch.arange(j, B * n_v, n_v, device=self.device)
+                    tgt = torch.tensor(c[1:], device=self.device)[None, :, None].expand(B, -1, 1)
+                    scores[:, j] += lp[rows, : len(c) - 1].gather(-1, tgt).squeeze(-1).sum(-1)
+
+        return [dict(zip(VERDICTS, row.tolist())) for row in torch.softmax(scores, dim=1)]
 
     @torch.no_grad()
     def reason(self, prompt: str, verdict: str, max_new_tokens: int = 60) -> str:

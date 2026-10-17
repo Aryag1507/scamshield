@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f7f5;
+  --surface: #ffffff;
+  --foreground: #16181d;
+  --muted: #5d6370;
+  --border: #e3e3df;
+  --accent: #2f5bea;
+  --accent-soft: #e9eefd;
+
+  --scam: #c8312b;
+  --scam-soft: #fdeceb;
+  --suspicious: #b26a00;
+  --suspicious-soft: #fdf3e2;
+  --safe: #1f7a4a;
+  --safe-soft: #e7f5ed;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #101114;
+    --surface: #17191e;
+    --foreground: #ecedef;
+    --muted: #9aa0ab;
+    --border: #2a2d34;
+    --accent: #7c9cff;
+    --accent-soft: #2b3870;
+
+    --scam: #ff7a72;
+    --scam-soft: #3a1a19;
+    --suspicious: #f0b65a;
+    --suspicious-soft: #3a2c14;
+    --safe: #5fd398;
+    --safe-soft: #15301f;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-scam: var(--scam);
+  --color-scam-soft: var(--scam-soft);
+  --color-suspicious: var(--suspicious);
+  --color-suspicious-soft: var(--suspicious-soft);
+  --color-safe: var(--safe);
+  --color-safe-soft: var(--safe-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --animate-rise: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

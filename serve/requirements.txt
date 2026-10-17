@@ -1,0 +1,5 @@
+fastapi==0.143.3
+uvicorn==0.54.0
+transformers==4.57.1
+huggingface_hub==0.35.3
+# torch==2.8.0 is installed separately from the CPU-only index (see Dockerfile)

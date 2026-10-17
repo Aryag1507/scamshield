@@ -108,6 +108,25 @@ Caveats, honestly stated:
 - Unseen-category messages come from the same teacher model as training data, so 99.1% likely overstates real-world generalization. A hand-collected set of real scams is on the roadmap.
 - Most remaining errors are scam ↔ suspicious on 2000s-era spam, where the labels themselves are debatable.
 
+## Serving (`serve/`)
+
+FastAPI app running the model on CPU. Live at `https://aryag1507--scamshield-api-web.us-east.modal.run`.
+
+- `POST /check` returns the verdict and probabilities from a single forward pass; `POST /reason` generates the one-sentence explanation. The website shows the verdict first (~1s) and fills in the explanation (~5s) after.
+- Message text is never logged or stored; caches are keyed by SHA-256 and IPs are kept in memory only for rate limiting.
+
+Inference choices, benchmarked on 150 test messages on a 2-vCPU machine (`modal run serve/modal_serve.py::benchmark`):
+
+| Setup | Accuracy | Verdict p50 | Verdict p90 | Peak memory |
+|---|---|---|---|---|
+| fp32, scoring each verdict separately (3 passes) | 82.7% | 3.1s | 12.0s | 4.1GB |
+| **fp32, message encoded once, KV cache shared across verdicts** | **82.7%** | **1.6s** | **4.9s** | **3.2GB** |
+| bf16 + shared cache | 82.7% | 8.4s | 30.5s | 3.5GB |
+| dynamic int8 (all Linear layers) | 34.7% | 1.8s | 7.5s | 6.0GB |
+| dynamic int8 (output head kept fp32) | 36.0% | 0.9s | 3.1s | 5.2GB |
+
+bf16 has no native support on typical server CPUs; dynamic int8 breaks this model's accuracy (outlier activations in the transformer layers), so the API serves fp32 with the shared prompt cache.
+
 ## Roadmap
 
 - [x] Data pipeline, teacher generation, group-aware splits
@@ -115,8 +134,9 @@ Caveats, honestly stated:
 - [x] First training run + results table
 - [ ] Real-world test set: hand-collected recent scams + legitimate messages
 - [ ] Preference tuning (DPO) on reasons the teacher grades as vague
-- [ ] Inference API (`serve/`), deployed on cloud GPU with autoscaling
-- [ ] Website with paste-to-check (`web/`)
+- [x] Inference API (`serve/`): FastAPI on CPU, deployed on Modal
+- [x] Website with paste-to-check (`web/`)
+- [ ] Website deployed on Vercel
 - [ ] Chrome extension for Gmail / Outlook / any page (`extension/`), published to the Chrome Web Store
 - [ ] Forward-to-check email address
 - [ ] Feedback button → logged false positives/negatives → next training round
