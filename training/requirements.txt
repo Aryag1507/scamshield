@@ -1,0 +1,10 @@
+# Data prep + teacher (run anywhere)
+anthropic>=1.15
+pandas
+pyarrow
+modal>=1.6
+
+# Training / eval (pinned to match the Modal image in modal_app.py)
+torch==2.8.0
+transformers==4.57.1
+accelerate==1.10.1
