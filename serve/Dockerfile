@@ -15,10 +15,11 @@ RUN pip install -r requirements.txt
 
 # Bake the model into the image: fast cold starts, no runtime dependency on the Hub.
 ARG SCAMSHIELD_MODEL=Aryag1507/scamshield-0.5b
-ENV SCAMSHIELD_MODEL=${SCAMSHIELD_MODEL}
-RUN python -c "import os; from huggingface_hub import snapshot_download; snapshot_download(os.environ['SCAMSHIELD_MODEL'], allow_patterns=['*.json', '*.safetensors', '*.txt', '*.jinja'])"
+ARG SCAMSHIELD_REVISION=e18864cb6ce0e1a974d48f01b9cf52bf1287136a
+ENV SCAMSHIELD_MODEL=${SCAMSHIELD_MODEL} SCAMSHIELD_REVISION=${SCAMSHIELD_REVISION}
+RUN python -c "import os; from huggingface_hub import snapshot_download; snapshot_download(os.environ['SCAMSHIELD_MODEL'], revision=os.environ['SCAMSHIELD_REVISION'], allow_patterns=['*.json', '*.safetensors', '*.txt', '*.jinja'])"
 
-COPY training/common.py training/scorer.py serve/app.py ./
+COPY training/common.py training/scorer.py serve/app.py serve/engine.py serve/quant.py ./
 
 EXPOSE 8000
 # No access log: it would record client IPs, which the privacy policy says aren't logged.

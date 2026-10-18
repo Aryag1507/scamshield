@@ -1,37 +1,56 @@
 {
   "model": "/vol/runs/sft-0.5b-v1/final",
   "thresholds": {
-    "scam": 0.3140393207536469,
-    "suspicious": 0.4,
+    "scam": 0.3260845253930817,
+    "suspicious": 0.55,
     "max_fpr": 0.01
   },
   "test": {
     "n": 362,
-    "accuracy": 0.8149171270718232,
+    "accuracy": 0.8314917127071824,
     "scam": {
-      "precision": 0.7263157894736842,
+      "precision": 0.7419354838709677,
       "recall": 0.8518518518518519,
-      "f1": 0.7840909090909091,
+      "f1": 0.7931034482758621,
       "support": 81
     },
     "suspicious": {
-      "precision": 0.5897435897435898,
-      "recall": 0.6052631578947368,
-      "f1": 0.5974025974025974,
+      "precision": 0.6428571428571429,
+      "recall": 0.5921052631578947,
+      "f1": 0.6164383561643836,
       "support": 76
     },
     "safe": {
-      "precision": 0.9523809523809523,
-      "recall": 0.8780487804878049,
-      "f1": 0.913705583756345,
+      "precision": 0.9396984924623115,
+      "recall": 0.9121951219512195,
+      "f1": 0.9257425742574257,
       "support": 205
     },
-    "safe_flagged_as_scam_rate": 0.024390243902439025,
-    "scam_auc": 0.9579104608760599,
+    "safe_flagged_as_scam_rate": 0.01951219512195122,
+    "scam_auc": 0.9576029172707702,
     "scam_recall_by_channel": {
       "email": 0.8333333333333334,
       "sms": 0.9333333333333333
-    }
+    },
+    "confusion": {
+      "scam": {
+        "scam": 69,
+        "suspicious": 11,
+        "safe": 1
+      },
+      "suspicious": {
+        "scam": 20,
+        "suspicious": 45,
+        "safe": 11
+      },
+      "safe": {
+        "scam": 4,
+        "suspicious": 14,
+        "safe": 187
+      }
+    },
+    "scam_warned_rate": 0.9876543209876543,
+    "scam_missed_rate": 0.012345679012345678
   },
   "test_unseen": {
     "n": 115,
@@ -61,20 +80,39 @@
       "email": 1.0,
       "chat": 0.9743589743589743,
       "webpage": 1.0
-    }
+    },
+    "confusion": {
+      "scam": {
+        "scam": 114,
+        "suspicious": 1,
+        "safe": 0
+      },
+      "suspicious": {
+        "scam": 0,
+        "suspicious": 0,
+        "safe": 0
+      },
+      "safe": {
+        "scam": 0,
+        "suspicious": 0,
+        "safe": 0
+      }
+    },
+    "scam_warned_rate": 1.0,
+    "scam_missed_rate": 0.0
   },
   "samples": [
     {
       "gold": "suspicious",
-      "pred": "scam",
-      "p_scam": 0.319,
-      "reason": "Unsolicited bulk marketing for a Chinese engine supplier with vague 'dear sir' greeting, unverifiable sales director, and an unexplained link to a personal domain; likely spam rather than fraud.",
+      "pred": "suspicious",
+      "p_scam": 0.317,
+      "reason": "Unsolicited bulk marketing from an unknown seller offering discounted VEH hydraulic heads with vague 'ship to you within 8-10 weeks' terms; no verifiable company identity, though it reads like spam rather than clear fraud.",
       "input": "Channel: email\n\nDear Sir, *\u00c2\u00a1\u00c2\u00b0\u00c3\u2013\u00c3\u0090\u00c3\u201a\u00c2\u00b7\u00c3\u008d\u00c2\u00a8\u00c3\u2026\u00c3\u00a4\u00c2\u00bc\u00c3\u00be\u00c2\u00b3\u00c2\u00a7\u00c2\u00a1\u00c2\u00b1\u00c3\u2014\u00c2\u00a8\u00c3\u2019\u00c2\u00b5\u00c3\u2030\u00c3\u00ba\u00c2\u00b2\u00c3\u00baVE\u00c2\u00b1\u00c3\u0192\u00c3\u008d\u00c2\u00b7(VE\u00c2\u00b7\u00c3\u2013\u00c3\u2026\u00c3\u00a4\u00c2\u00b1\u00c3\u0192\u00c2\u00b1\u00c3\u0192\u00c3\u008d\u00c2\u00b7\u00c3\u2014\u00c3\u0153\u00c2\u00b3\u00c3\u2030),\u00c3\u2013\u00c3\u00b7\u00c3\u2019\u00c2\u00aa\u00c3\u0090\u00c3\u008d\u00c2\u00ba\u00c3\u2026\u00c3\u201c\u00c3\u0090\n \u00c3\u017d\u00c3\u00a5\u00c3\u0160\u00c2\u00ae\u00c3\u0081\u00c3\u00a54JB1,\u00c2\u00bf\u00c2\u00b5\u00c3\u0192\u00c3\u00b7\u00c3\u2039\u00c2\u00b96BT,\u00c3\u2019\u00c3\u20ac\u00c3\u017d\u00c2\u00ac\u00c2\u00bf\u00c3\u201a\u00c2\u00b5\u00c3\u008d\u00c3\u2026\u00c3\u2026\u00c2\u00b7\u00c3\u2026,\u00c3\u017d\u00c3\u00a5\u00c3\u0160\u00c2\u00ae\u00c3\u0081\u00c3\u00a4\u00c3\u2020\u00c2\u00a4\u00c2\u00bf\u00c2\u00a8..... \n \n * \u00c3\u2013\u00c3\u0090\u00c3\u201a\u00c2\u00b7\u00c3\u008d\u00c2\u00a8\u00c3\u2026\u00c3\u00a4\u00c2\u00bc\u00c3\u00be\u00c2\u00b3\u00c2\u00a7\u00c3\u201c\u00c3\u0090\u00c2\u00b6\u00c3\u00a0\u00c3\u201e\u00c3\u00aa\u00c3\u2030\u00c3\u00ba\u00c2\u00b2\u00c3\u00baVE\u00c2\u00b1\u00c3\u0192\u00c3\u008d\u00c2\u00b7\u00c2\u00b5\u00c3\u201e\u00c2\u00be\u00c2\u00ad\u00c3\u2018\u00c3\u00a9, \u00c3\u2014"
     },
     {
       "gold": "suspicious",
       "pred": "suspicious",
-      "p_scam": 0.059,
+      "p_scam": 0.053,
       "reason": "Unsolicited mortgage marketing with urgency ('jump-start your plans today'), vague 'click here' links to unnamed lender pages, and an unsubscribe link on a lookalike domain; unwanted spam rather than clear fraud.",
       "input": "Channel: email\n\n\u00c2\u00a0\n\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0The \n Best Mortage Rates\n\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0Simple, \n Easy and FREE\n\u00c2\u00a0 \n\u00c2\u00a0\n\u00c2\u00a0\n\u00c2\u00a0\n\u00c2\u00a0\n\u00c2\u00a0\nHave \n HUNDREDS of lenders compete for your loan!\n \nRefinancing \nNew Home Loans \nDebt Consolidation \nSecond Mortgage \nHome Equity Click Here To\n JUMP-START\n your Plans for\n the Future!!!Dear \n Home"
     },
@@ -116,14 +154,14 @@
     {
       "gold": "suspicious",
       "pred": "suspicious",
-      "p_scam": 0.144,
+      "p_scam": 0.145,
       "reason": "Unsolicited sexual-enhancement pitch with exaggerated claims like 'more info here' and random word salad; unwanted spam but no clear credential or money theft request.",
       "input": "Channel: email\n\ndont let age deter you from great sex ! 20 minutes is all it takes more info here . . . dart lj bremsstrahlung yc regretful sy luminary vw coloratura ymz perfect fnj drag dho deconvolve nft fief tik weigh vm cognition yr adjutant ss prodigy xl lurid tu no"
     },
     {
       "gold": "scam",
       "pred": "suspicious",
-      "p_scam": 0.06,
+      "p_scam": 0.067,
       "reason": "Unsolicited adult-content spam with explicit adult language, 'teen' wording, and an unexplained 'free preview' hook; unwanted and possibly malicious, though no direct credential or payment request appears.",
       "input": "Channel: email\n\nyw best teen porn klykyh welcome to this new fantastic teen site choke - full with fresh exclusive content . teen girls nowadays are not only young , fresh , gorgeous and ever so hot , but also have enough sexual experience to show class and temper . no shyness , embarrassment or sti"
     },
@@ -137,7 +175,7 @@
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.015,
+      "p_scam": 0.019,
       "reason": "It is a generic security alert about a sign-in event, offers no link or payment request, and directs the user to their own domain for more details.",
       "input": "Channel: email\nFrom: no-reply@accounts.google.com\nSubject: Security alert: new sign-in on Windows device\n\nHi Maya, your Google Account was just signed in to from a Windows device in Edmonton, AB. If this was you, you don't need to do anything. If not, we'll help you secure your account. You can revi"
     },
@@ -158,7 +196,7 @@
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.043,
+      "p_scam": 0.039,
       "reason": "The sender is a standard Discord domain, the message names no link or payment request, and it directs the user to within the official app rather than an external site.",
       "input": "Channel: email\nFrom: noreply@discord.com\nSubject: New login detected\n\nhey dev, someone (probably you!) logged into your Discord account from a new device in Montreal. if that's you, all good. if not, go to User Settings > Security inside the app and reset your password. -- Discord"
     },
@@ -172,7 +210,7 @@
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.02,
+      "p_scam": 0.016,
       "reason": "The sender is a standard Spotify domain, the message names only a device and location, and it directs the user to the official account page rather than any link.",
       "input": "Channel: email\nFrom: no-reply@spotify.com\nSubject: New device logged into your Spotify account\n\nHi Nadia, your Spotify account was just logged into on a new device: Samsung Galaxy S23, Vancouver, BC. You're getting this so you can stay in control of your account. Not you? Go to spotify.com/account, "
     },
@@ -186,7 +224,7 @@
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.002,
+      "p_scam": 0.001,
       "reason": "The message names a specific device and city, gives no link, and directs the user to in-app settings without any payment request.",
       "input": "Channel: email\nFrom: noreply@reddit.com\nSubject: Reddit: new login from a new location\n\nHi there, we noticed a login to your Reddit account from a new location (Ottawa, Ontario) on an Android device. If this was you, you can safely ignore this message. If not, change your password from User Settings"
     },
@@ -207,7 +245,7 @@
     {
       "gold": "safe",
       "pred": "suspicious",
-      "p_scam": 0.02,
+      "p_scam": 0.022,
       "reason": "Unsolicited bulk toner marketing from an unverified sender with no company name, prices, or verifiable contact details; pushy spam rather than clear fraud.",
       "input": "Channel: email\n\nTremendous Savings\non Toners,\u00c2\u00a0Inkjets, FAX, and Thermal Replenishables!!\nToners 2 Go\nis your secret\nweapon to lowering your cost for High Quality,\nLow-Cost printer\nsupplies!\u00c2\u00a0 We have been in the printer\nreplenishables business since 1992,\nand pride ourselves on rapid response and o"
     },
@@ -228,14 +266,14 @@
     {
       "gold": "scam",
       "pred": "suspicious",
-      "p_scam": 0.107,
+      "p_scam": 0.095,
       "reason": "Unsolicited pharmacy spam pushing erectile dysfunction pills with an unexplained 'click here' link; unwanted marketing but no clear credential or money theft request.",
       "input": "Channel: email\n\nmany times when we learn how many happy marriages end in divorce we can single out the main reason for such things - erectile dysfunction . is your life a failure ? not at all , soft viagra is made especially for such purposes to make you sex life bright again and you ' ll be a sweet"
     },
     {
       "gold": "suspicious",
       "pred": "scam",
-      "p_scam": 0.467,
+      "p_scam": 0.498,
       "reason": "Unsolicited prize notification demanding a click-here link, urgency ('limited time'), and a phone number to call; classic lottery fraud pattern, though garbled text suggests spam filter evasion.",
       "input": "Channel: email\n\ncomplimentary $ 100 starbucks gift card giveaway congrats bruceg @ em . ca , you ' ve been selected to participate in our ' free * ' $ 100 starbucks card promotion . to claim your $ 100 starbucks card before it ' s too late ! please click here this is a limited time promotion , pleas"
     }

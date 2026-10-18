@@ -64,6 +64,13 @@ def metrics(scored: list[dict], t_scam: float, t_susp: float) -> dict:
             by_channel[r["channel"]][0] += p == "scam"
             by_channel[r["channel"]][1] += 1
     m["scam_recall_by_channel"] = {c: hit / n for c, (hit, n) in by_channel.items()}
+
+    # Rows = gold, columns = predicted. For users, scam and suspicious both show a warning,
+    # so "warned" (scam -> scam or suspicious) and "missed" (scam -> safe) are what matter.
+    m["confusion"] = {g: {p: sum(gp == p and gg == g for gp, gg in zip(preds, gold)) for p in VERDICTS} for g in VERDICTS}
+    scams = [p for p, g in zip(preds, gold) if g == "scam"]
+    m["scam_warned_rate"] = sum(p != "safe" for p in scams) / max(1, len(scams))
+    m["scam_missed_rate"] = sum(p == "safe" for p in scams) / max(1, len(scams))
     return m
 
 

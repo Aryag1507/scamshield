@@ -26,7 +26,7 @@ flowchart LR
         PUB[Public datasets<br/>~23k emails + SMS] --> TEACH
         TAX[Scam taxonomy<br/>47 categories × 4 channels] --> TEACH
         TEACH[Teacher LLM<br/>labels + reasons + synthetic modern scams] --> SPLIT[Group-aware split<br/>+ held-out scam categories]
-        SPLIT --> SFT[Full fine-tune<br/>Qwen2.5-0.5B] --> EVAL[Eval + threshold tuning<br/>at 1% FPR]
+        SPLIT --> SFT[Full fine-tune<br/>Qwen2.5-0.5B] --> GRPO[GRPO RL<br/>teacher-judged reward] --> EVAL[Eval + threshold tuning<br/>at 1% FPR]
     end
     EVAL -->|model + thresholds| HUB[(Hugging Face Hub)] --> API
 ```
@@ -94,19 +94,37 @@ Note: `submit` overwrites the saved batch ID for that job, so collect a batch be
 
 ## Results
 
-Model: [huggingface.co/Aryag1507/scamshield-0.5b](https://huggingface.co/Aryag1507/scamshield-0.5b)
+Model: [huggingface.co/Aryag1507/scamshield-0.5b](https://huggingface.co/Aryag1507/scamshield-0.5b) (v2 live; v1 in the repo history)
 
-Starter run: 4,544 training examples (Haiku teacher), full SFT of Qwen2.5-0.5B-Instruct, 2 epochs, one L4 GPU (~28 min). Test set: 362 held-out messages; unseen categories: 115 scams from 3 scam types never seen in training. Threshold tuned on validation for ≤1% safe→scam false positives.
+Test set: 362 held-out messages (81 scams, 76 suspicious, 205 safe). **Unseen**: 115 scams from 3 scam types excluded from all training. Thresholds tuned on validation for ≤1% safe→scam. A scam counts as **warned** when the model says scam or suspicious, since both show the user a warning.
 
-| Model | Scam recall | Scam precision | AUC | Safe flagged as scam | 3-way accuracy | Unseen-category recall |
-|---|---|---|---|---|---|---|
-| Qwen2.5-0.5B-Instruct (no tuning) | 0.0% | — | 0.509 | 1.5% | 55.5% | 0.0% |
-| **ScamShield-0.5B v1 (SFT)** | **85.2%** | **72.6%** | **0.958** | **2.4%** | **81.5%** | **99.1%** |
+| Model | 3-way accuracy | Scams warned | Scams missed | Safe messages warned | Safe called scam | Unseen scams warned | Explanation quality |
+|---|---|---|---|---|---|---|---|
+| Qwen2.5-0.5B-Instruct (untrained) | 55.2% | 1.2% | 98.8% | 2.4% | 1.95% | 0.0% | — |
+| v1: SFT | 83.1% | 98.8% | 1.2% | 8.8% | 1.95% | 100% | 0.773 |
+| **v2: SFT + GRPO (live)** | **85.1%** | **97.5%** | **2.5%** | **3.9%** | **0.98%** | **97.4%** | **0.785** |
+
+Explanation quality: mean 0-1 score from a teacher judge (specific / accurate / concise) on 150 test scams, each model explaining the gold verdict.
 
 Caveats, honestly stated:
-- The FPR budget is set on a small validation set (187 safe messages, so 1% ≈ 2 messages); on test it landed at 2.4% (5 of 205). More validation data will tighten this.
-- Unseen-category messages come from the same teacher model as training data, so 99.1% likely overstates real-world generalization. A hand-collected set of real scams is on the roadmap.
-- Most remaining errors are scam ↔ suspicious on 2000s-era spam, where the labels themselves are debatable.
+- Test sets are small (81 scams): one message moves a rate by ~1.2 points.
+- Unseen-category messages come from the same teacher model as the training data, so they likely overstate real-world generalization. A hand-collected set of real scams is on the roadmap.
+- Many remaining errors are scam ↔ suspicious on 2000s-era spam, where the labels themselves are debatable.
+
+### Stage 2: GRPO (`training/grpo.py`, `training/judge.py`)
+
+Group Relative Policy Optimization, written from scratch on top of the SFT model:
+
+1. Sample 8 training messages (balanced across verdicts); generate 8 answers each at temperature 1.0.
+2. **Reward** each answer: verdict +1 correct, +0.25 scam↔suspicious, −1 wrong, **−1.5 for calling a safe message a scam**, −1 unparseable; plus 0.5 × an explanation score from a teacher judge (Claude Haiku 5.5, structured output, run concurrently and memoized).
+3. **Advantage** = (reward − group mean) / group std, comparing each answer only with its siblings, so no value network is needed.
+4. **Loss**: policy gradient on completion tokens + k3 KL penalty (0.04) to the frozen SFT model; the LM head is applied only to completion positions.
+
+150 steps, 9,600 graded answers, 0 judge failures, one L4 GPU (~55 min, ~$1 judge cost).
+
+**What it did:** the policy learned exactly the trade-off the reward encoded. A false alarm cost more than hedging a real scam to "suspicious", so false warnings on legitimate messages fell from **8.8% to 3.9%** and accuracy rose 2 points, while slightly more scams were hedged or missed (missed 1.2% → 2.5%). For an extension that checks every message, fewer false alarms was the better trade, so v2 is live. Explanation quality rose during training on sampled answers (0.645 → 0.717) but only slightly under greedy decoding (0.773 → 0.785); a next iteration would lower the hedging credit and weight the explanation reward more.
+
+Engineering notes: a fresh `asyncio.run()` per step crashed on step 2 of the first run (the judge's semaphore binds to the first event loop that makes a caller wait; the local test made too few calls to trigger it). Fixed with one event loop per run, and reproduced and verified locally with a contended fake judge before relaunching.
 
 ## Serving (`serve/`)
 
@@ -149,8 +167,10 @@ Findings:
 - [x] Data pipeline, teacher generation, group-aware splits
 - [x] Cloud SFT + calibrated evaluation
 - [x] First training run + results table
+- [x] RL post-training (GRPO) with a teacher-judged explanation reward
+- [x] Own inference engine: continuous batching, streaming, shared prompt cache
 - [ ] Real-world test set: hand-collected recent scams + legitimate messages
-- [ ] Preference tuning (DPO) on reasons the teacher grades as vague
+- [ ] GRPO v3: less credit for hedging scams, more weight on explanation quality
 - [x] Inference API (`serve/`): FastAPI on CPU, deployed on Modal
 - [x] Website with paste-to-check (`web/`)
 - [ ] Website deployed on Vercel

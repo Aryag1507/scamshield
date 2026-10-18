@@ -13,15 +13,17 @@ const STEPS = [
     body: "A 0.5B-parameter language model was fully fine-tuned on that data, so it reads a message the way a fraud analyst would and explains its call in one sentence.",
   },
   {
-    title: "Tuned not to cry wolf",
-    body: "Its alarm threshold is calibrated so legitimate messages are rarely flagged. A warning that's usually wrong gets ignored.",
+    title: "Sharpened with reinforcement learning",
+    body: "It then practiced: writing several answers per message, scored on getting the verdict right (false alarms cost the most) and on how specific its explanation was. That halved false warnings on normal messages.",
   },
 ];
 
 const RESULTS = [
-  { label: "Scams caught", before: "0%", after: "85%" },
-  { label: "Scam types never seen in training, caught", before: "0%", after: "99%" },
-  { label: "Ranking quality (AUC)", before: "0.51", after: "0.96" },
+  { label: "Scams flagged", before: "1%", after: "97.5%" },
+  { label: "Scam types never seen in training, flagged", before: "0%", after: "97%" },
+  // Higher than untrained (which barely flags anything), so not styled as an improvement.
+  { label: "Normal messages wrongly flagged", before: "2%", after: "3.9%", neutral: true },
+  { label: "Overall accuracy (scam / suspicious / safe)", before: "55%", after: "85%" },
 ];
 
 export default function Home() {
@@ -54,7 +56,8 @@ export default function Home() {
       <section className="pt-16">
         <h2 className="text-2xl font-semibold tracking-tight">Before and after training</h2>
         <p className="mt-2 text-sm text-muted">
-          Same base model, measured on 362 held-out messages plus 115 scams from types it never trained on.
+          Same base model before and after training, measured on 362 held-out messages plus 115 scams from types it
+          never trained on. Flagged means a scam or suspicious warning.
         </p>
         <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface">
           <table className="w-full text-left text-sm">
@@ -70,7 +73,9 @@ export default function Home() {
                 <tr key={r.label} className="border-b border-border last:border-0">
                   <th scope="row" className="px-4 py-3.5 font-normal sm:px-5">{r.label}</th>
                   <td className="px-3 py-3.5 text-right font-mono tabular-nums text-muted">{r.before}</td>
-                  <td className="px-4 py-3.5 text-right font-mono font-medium tabular-nums text-safe sm:px-5">{r.after}</td>
+                  <td className={`px-4 py-3.5 text-right font-mono font-medium tabular-nums sm:px-5 ${"neutral" in r ? "text-foreground" : "text-safe"}`}>
+                    {r.after}
+                  </td>
                 </tr>
               ))}
             </tbody>

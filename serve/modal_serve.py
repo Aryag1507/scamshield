@@ -9,6 +9,7 @@ From serve/:
 """
 
 import json
+import os
 import random
 import time
 from pathlib import Path
@@ -16,6 +17,9 @@ from pathlib import Path
 import modal
 
 MODEL_ID = "Aryag1507/scamshield-0.5b"
+# Pinned Hub commit. The model is baked into the image and Modal caches image layers, so
+# changing this is what forces a rebuild with new weights (and makes deploys reproducible).
+MODEL_REVISION = "e18864cb6ce0e1a974d48f01b9cf52bf1287136a"  # v2: SFT + GRPO (v1 SFT: f7c54706...)
 CPU, MEMORY_MB = 2.0, 6144  # fp32 peaks ~3.2GB RSS; leave headroom
 HERE = Path(__file__).parent
 
@@ -23,14 +27,14 @@ HERE = Path(__file__).parent
 def download_model():
     from huggingface_hub import snapshot_download
 
-    snapshot_download(MODEL_ID, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
+    snapshot_download(MODEL_ID, revision=os.environ["SCAMSHIELD_REVISION"], allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
 
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("torch==2.8.0", index_url="https://download.pytorch.org/whl/cpu")
     .pip_install_from_requirements(str(HERE / "requirements.txt"))
-    .env({"HF_HOME": "/models", "TOKENIZERS_PARALLELISM": "false", "SCAMSHIELD_MODEL": MODEL_ID})
+    .env({"HF_HOME": "/models", "TOKENIZERS_PARALLELISM": "false", "SCAMSHIELD_MODEL": MODEL_ID, "SCAMSHIELD_REVISION": MODEL_REVISION})
     .run_function(download_model)
     .add_local_file(HERE / "app.py", "/root/app.py")
     .add_local_file(HERE / "engine.py", "/root/engine.py")
@@ -63,7 +67,7 @@ def bench(variant: str, rows: list[dict], reason_samples: int = 10) -> dict:
     from scorer import Scorer
 
     torch.set_num_threads(int(CPU))
-    path = snapshot_download(MODEL_ID, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
+    path = snapshot_download(MODEL_ID, revision=MODEL_REVISION, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
     dtype = torch.bfloat16 if variant == "bf16" else torch.float32
     scorer = Scorer(path, device="cpu", dtype=dtype)
     if variant == "int8-weight-only":

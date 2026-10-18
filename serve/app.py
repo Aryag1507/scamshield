@@ -41,6 +41,7 @@ from engine import Engine
 from scorer import Scorer, decide
 
 MODEL_ID = os.environ.get("SCAMSHIELD_MODEL", "Aryag1507/scamshield-0.5b")
+MODEL_REVISION = os.environ.get("SCAMSHIELD_REVISION")  # pin a Hub commit; None = latest
 WEIGHTS = os.environ.get("WEIGHTS", "fp32")  # "fp32" or "int8" (weight-only, see quant.py)
 RATE_LIMIT_PER_MIN = int(os.environ.get("RATE_LIMIT_PER_MIN", "30"))
 CACHE_SIZE = int(os.environ.get("CACHE_SIZE", "4096"))
@@ -100,7 +101,7 @@ state = State()
 
 def load_model() -> None:
     torch.set_num_threads(os.cpu_count() or 1)
-    path = MODEL_ID if os.path.isdir(MODEL_ID) else snapshot_download(MODEL_ID, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
+    path = MODEL_ID if os.path.isdir(MODEL_ID) else snapshot_download(MODEL_ID, revision=MODEL_REVISION, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.jinja"])
     # fp32 activations always. Benchmarked on 2 vCPUs: bf16 was ~5x slower (no native bf16 on
     # most server CPUs) and dynamic int8 (int8 activations) collapsed accuracy to 36%.
     state.scorer = Scorer(path, device="cpu", dtype=torch.float32)
@@ -179,7 +180,7 @@ async def get_reason(prompt: str, verdict: str) -> str:
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": MODEL_ID, "weights": WEIGHTS}
+    return {"status": "ok", "model": MODEL_ID, "revision": (MODEL_REVISION or "latest")[:8], "weights": WEIGHTS}
 
 
 @app.post("/check", response_model=CheckResponse)

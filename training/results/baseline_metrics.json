@@ -1,13 +1,13 @@
 {
   "model": "Qwen/Qwen2.5-0.5B-Instruct",
   "thresholds": {
-    "scam": 0.6490710983739624,
+    "scam": 0.6333727250562439,
     "suspicious": 0.75,
     "max_fpr": 0.01
   },
   "test": {
     "n": 362,
-    "accuracy": 0.5552486187845304,
+    "accuracy": 0.5524861878453039,
     "scam": {
       "precision": 0.0,
       "recall": 0.0,
@@ -21,17 +21,36 @@
       "support": 76
     },
     "safe": {
-      "precision": 0.5630252100840336,
-      "recall": 0.9804878048780488,
-      "f1": 0.7153024911032028,
+      "precision": 0.5633802816901409,
+      "recall": 0.975609756097561,
+      "f1": 0.7142857142857142,
       "support": 205
     },
-    "safe_flagged_as_scam_rate": 0.014634146341463415,
-    "scam_auc": 0.5087210579500022,
+    "safe_flagged_as_scam_rate": 0.01951219512195122,
+    "scam_auc": 0.5168929308905584,
     "scam_recall_by_channel": {
       "email": 0.0,
       "sms": 0.0
-    }
+    },
+    "confusion": {
+      "scam": {
+        "scam": 0,
+        "suspicious": 1,
+        "safe": 80
+      },
+      "suspicious": {
+        "scam": 1,
+        "suspicious": 0,
+        "safe": 75
+      },
+      "safe": {
+        "scam": 4,
+        "suspicious": 1,
+        "safe": 200
+      }
+    },
+    "scam_warned_rate": 0.012345679012345678,
+    "scam_missed_rate": 0.9876543209876543
   },
   "test_unseen": {
     "n": 115,
@@ -61,181 +80,200 @@
       "email": 0.0,
       "chat": 0.0,
       "webpage": 0.0
-    }
+    },
+    "confusion": {
+      "scam": {
+        "scam": 0,
+        "suspicious": 0,
+        "safe": 115
+      },
+      "suspicious": {
+        "scam": 0,
+        "suspicious": 0,
+        "safe": 0
+      },
+      "safe": {
+        "scam": 0,
+        "suspicious": 0,
+        "safe": 0
+      }
+    },
+    "scam_warned_rate": 0.0,
+    "scam_missed_rate": 1.0
   },
   "samples": [
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.414,
+      "p_scam": 0.495,
       "reason": "The message appears to contain a large amount of technical data related to diesel fuel injection systems, including product specifications, shipping terms, and contact information. It does not contain any suspicious or fraudulent elements.",
       "input": "Channel: email\n\nDear Sir, *\u00c2\u00a1\u00c2\u00b0\u00c3\u2013\u00c3\u0090\u00c3\u201a\u00c2\u00b7\u00c3\u008d\u00c2\u00a8\u00c3\u2026\u00c3\u00a4\u00c2\u00bc\u00c3\u00be\u00c2\u00b3\u00c2\u00a7\u00c2\u00a1\u00c2\u00b1\u00c3\u2014\u00c2\u00a8\u00c3\u2019\u00c2\u00b5\u00c3\u2030\u00c3\u00ba\u00c2\u00b2\u00c3\u00baVE\u00c2\u00b1\u00c3\u0192\u00c3\u008d\u00c2\u00b7(VE\u00c2\u00b7\u00c3\u2013\u00c3\u2026\u00c3\u00a4\u00c2\u00b1\u00c3\u0192\u00c2\u00b1\u00c3\u0192\u00c3\u008d\u00c2\u00b7\u00c3\u2014\u00c3\u0153\u00c2\u00b3\u00c3\u2030),\u00c3\u2013\u00c3\u00b7\u00c3\u2019\u00c2\u00aa\u00c3\u0090\u00c3\u008d\u00c2\u00ba\u00c3\u2026\u00c3\u201c\u00c3\u0090\n \u00c3\u017d\u00c3\u00a5\u00c3\u0160\u00c2\u00ae\u00c3\u0081\u00c3\u00a54JB1,\u00c2\u00bf\u00c2\u00b5\u00c3\u0192\u00c3\u00b7\u00c3\u2039\u00c2\u00b96BT,\u00c3\u2019\u00c3\u20ac\u00c3\u017d\u00c2\u00ac\u00c2\u00bf\u00c3\u201a\u00c2\u00b5\u00c3\u008d\u00c3\u2026\u00c3\u2026\u00c2\u00b7\u00c3\u2026,\u00c3\u017d\u00c3\u00a5\u00c3\u0160\u00c2\u00ae\u00c3\u0081\u00c3\u00a4\u00c3\u2020\u00c2\u00a4\u00c2\u00bf\u00c2\u00a8..... \n \n * \u00c3\u2013\u00c3\u0090\u00c3\u201a\u00c2\u00b7\u00c3\u008d\u00c2\u00a8\u00c3\u2026\u00c3\u00a4\u00c2\u00bc\u00c3\u00be\u00c2\u00b3\u00c2\u00a7\u00c3\u201c\u00c3\u0090\u00c2\u00b6\u00c3\u00a0\u00c3\u201e\u00c3\u00aa\u00c3\u2030\u00c3\u00ba\u00c2\u00b2\u00c3\u00baVE\u00c2\u00b1\u00c3\u0192\u00c3\u008d\u00c2\u00b7\u00c2\u00b5\u00c3\u201e\u00c2\u00be\u00c2\u00ad\u00c3\u2018\u00c3\u00a9, \u00c3\u2014"
     },
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.22,
+      "p_scam": 0.217,
       "reason": "The email contains clear information about mortgage rates, refinancing options, debt consolidation services, and free access to these services. It also includes a link to sign up for free offers from JUNCAN.net.",
       "input": "Channel: email\n\n\u00c2\u00a0\n\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0The \n Best Mortage Rates\n\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0\u00c2\u00a0Simple, \n Easy and FREE\n\u00c2\u00a0 \n\u00c2\u00a0\n\u00c2\u00a0\n\u00c2\u00a0\n\u00c2\u00a0\n\u00c2\u00a0\nHave \n HUNDREDS of lenders compete for your loan!\n \nRefinancing \nNew Home Loans \nDebt Consolidation \nSecond Mortgage \nHome Equity Click Here To\n JUMP-START\n your Plans for\n the Future!!!Dear \n Home"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.277,
+      "p_scam": 0.225,
       "reason": "The message contains no suspicious or fraudulent content. It appears to be an official document from Continental Power, providing financial information in April 2000.",
       "input": "Channel: email\n\ncontinental power curve validation april 2000 attached is the april 2000 curve validation and profit report for continental power . if there are any questions or queries please let me know . appologies for this being late this month as i have been out of the office . regards james"
     },
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.152,
+      "p_scam": 0.153,
       "reason": "The content appears to be about purchasing high-quality ink products from reputable sources, which is generally considered safe when shopping online.",
       "input": "Channel: email\n\neasy ink online purchase - - save big online . customers can enjoy more flexible rates on brand name ink products as they shop online . get significant discount on quality ink products . need more assistance ? contact our professional support for timely assistance . do you want to ge"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.496,
+      "p_scam": 0.453,
       "reason": "The message contains no explicit scams or phishing attempts, focusing instead on providing encouragement and love to the recipient.",
       "input": "Channel: sms\n\n\"AH POOR BABY!HOPE URFEELING BETTERSN LUV! PROBTHAT OVERDOSE OF WORK HEY GO CAREFUL SPK 2 U SN LOTS OF LOVEJEN XXX.\""
     },
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.565,
+      "p_scam": 0.488,
       "reason": "The email warns about potential financial risks such as expensive repairs and unexpected expenses, suggesting a car insurance policy can help mitigate these issues. It also provides details about coverage options like roadside assistance, rental benefits, and trip interruption benefits, which could be valuable in case of emergencies.",
       "input": "Channel: email\n\nwhy does your vehicle make that noise ? aak protect your financial well - being . purchase an extended auto warranty for your vehicle today . click here for your free , fast , no bs rates now ! ! car troubles and expensive repair bills always seem to happen at the worst possible time"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.078,
+      "p_scam": 0.059,
       "reason": "The message appears to be from a trusted source, likely a bank or financial institution, which is generally considered safe for sensitive information like banking details.",
       "input": "Channel: sms\n\nOr remind me in a few hrs."
     },
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.197,
+      "p_scam": 0.187,
       "reason": "The content appears to be sexually explicit and inappropriate for children, making it unsuitable for adults.",
       "input": "Channel: email\n\ndont let age deter you from great sex ! 20 minutes is all it takes more info here . . . dart lj bremsstrahlung yc regretful sy luminary vw coloratura ymz perfect fnj drag dho deconvolve nft fief tik weigh vm cognition yr adjutant ss prodigy xl lurid tu no"
     },
     {
       "gold": "scam",
       "pred": "safe",
-      "p_scam": 0.085,
+      "p_scam": 0.078,
       "reason": "The site offers high-quality, sexually explicit content suitable for teenagers. It includes features like a free preview, which is important for safety reasons.",
       "input": "Channel: email\n\nyw best teen porn klykyh welcome to this new fantastic teen site choke - full with fresh exclusive content . teen girls nowadays are not only young , fresh , gorgeous and ever so hot , but also have enough sexual experience to show class and temper . no shyness , embarrassment or sti"
     },
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.23,
+      "p_scam": 0.216,
       "reason": "The message contains no explicit scams or phishing attempts, focusing instead on health-related topics and claims about human growth hormones. It does not include any suspicious elements such as links to illegal activities or deceptive practices.",
       "input": "Channel: email\n\nreverse aging while burning fat the following message was sent to you as an opt - in subscriber to enetwork . we will continue to bring you valuable offers on the products and services that interest you most . if you wish to unsubscribe please click on the remove link at the bottom o"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.342,
+      "p_scam": 0.338,
       "reason": "This message is legitimate as it provides security advice for users who have recently signed into their Google accounts via a Windows device in Edmonton, AB. It does not contain any suspicious or fraudulent content.",
       "input": "Channel: email\nFrom: no-reply@accounts.google.com\nSubject: Security alert: new sign-in on Windows device\n\nHi Maya, your Google Account was just signed in to from a Windows device in Edmonton, AB. If this was you, you don't need to do anything. If not, we'll help you secure your account. You can revi"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.384,
+      "p_scam": 0.389,
       "reason": "The sender is using a reputable email address (account-security-noreply@accountprotection.microsoft.com) and appears to be sending an official message about a potential security issue. They also mention checking their account's settings and reviewing recent activity before making any changes. This suggests they're taking steps to protect",
       "input": "Channel: email\nFrom: account-security-noreply@accountprotection.microsoft.com\nSubject: New sign-in on Chrome for Windows\n\nHey Jordan, we noticed a new sign-in to your Microsoft account from Chrome on Windows near Waterloo, Ontario, on Tuesday evening. Was that you? If yes, nothing else to do. If not"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.38,
+      "p_scam": 0.34,
       "reason": "The sender is attempting to trick users by using a fake email address to impersonate someone else's account, which could lead to unauthorized access to their device.",
       "input": "Channel: email\nFrom: no_reply@email.apple.com\nSubject: Your Apple Account was used to sign in on a new iPad\n\nHi Aisha! Just a heads up: your Apple Account was used to sign in on an iPad (9th generation) on March 3. If that was you, you can ignore this. If it wasn't, open Settings on your iPhone, tap"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.127,
+      "p_scam": 0.139,
       "reason": "The sender is using a fake email address and appears to be a Discord developer attempting to reset a user's password. They provide clear instructions on how to proceed without any suspicious elements.",
       "input": "Channel: email\nFrom: noreply@discord.com\nSubject: New login detected\n\nhey dev, someone (probably you!) logged into your Discord account from a new device in Montreal. if that's you, all good. if not, go to User Settings > Security inside the app and reset your password. -- Discord"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.333,
+      "p_scam": 0.307,
       "reason": "The message appears to be a genuine notification about a new login attempt to an Instructure account, without any suspicious elements such as links or attachments. It also mentions that the university's IT support team is listed on the student portal, which is typical for such notifications.",
       "input": "Channel: email\nFrom: noreply@instructure.com\nSubject: New login to your Canvas account\n\nHello Tyler, a new login to your Canvas account was recorded on 12 February at 9:14 PM from Firefox on Linux in Halifax, NS. If you did not sign in, please change your password under Account > Settings > Password"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.244,
+      "p_scam": 0.221,
       "reason": "The sender is providing a direct link to Spotify's official website for account management, which is a legitimate way to keep track of account information. They also mention updating passwords, which is a standard security practice.",
       "input": "Channel: email\nFrom: no-reply@spotify.com\nSubject: New device logged into your Spotify account\n\nHi Nadia, your Spotify account was just logged into on a new device: Samsung Galaxy S23, Vancouver, BC. You're getting this so you can stay in control of your account. Not you? Go to spotify.com/account, "
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.304,
+      "p_scam": 0.284,
       "reason": "The sender is providing contact information (no-reply@dropbox.com) and a link to view active sessions under Security in Dropbox settings, which indicates they are not attempting to trick users into signing up for services.",
       "input": "Channel: email\nFrom: no-reply@dropbox.com\nSubject: New sign-in to your Dropbox account\n\nHey Ben, just letting you know there was a sign-in to your Dropbox from a MacBook in Calgary on Saturday. If that was you, there's nothing to do. If not, you can review active sessions under Security in your Drop"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.323,
+      "p_scam": 0.363,
       "reason": "The message is clearly stating that the login came from a new location in Ottawa, Ontario, which is unusual for a Reddit user. It also provides instructions on how to update their password if they suspect identity theft.",
       "input": "Channel: email\nFrom: noreply@reddit.com\nSubject: Reddit: new login from a new location\n\nHi there, we noticed a login to your Reddit account from a new location (Ottawa, Ontario) on an Android device. If this was you, you can safely ignore this message. If not, change your password from User Settings"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.26,
+      "p_scam": 0.319,
       "reason": "The sender does not use any deceptive tactics such as fake emails or links that could lead to fraudulent activities. They provide clear instructions on how to proceed without causing harm.",
       "input": "Channel: email\nFrom: noreply@steampowered.com\nSubject: Steam Guard: new computer sign-in\n\nHello Kyle, a new computer just signed in to your Steam account from Quebec City, Canada. If it was you, no action is needed. If you don't recognize it, go to Steam settings, then Account, then Security, and ch"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.269,
+      "p_scam": 0.288,
       "reason": "The sender is providing a direct link to change their password for an Amazon account, which is a common practice to prevent unauthorized access. They also mention that the sign-in came from a legitimate source (Chrome) rather than a malicious website.",
       "input": "Channel: email\nFrom: account-update@amazon.ca\nSubject: New sign-in to your Amazon.ca account\n\nHi Sofia, we noticed a sign-in to your Amazon.ca account from a Chrome browser on Windows in Toronto, ON on February 20. If this was you, you don't need to do anything. If not, go to Your Account, then Logi"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.377,
+      "p_scam": 0.376,
       "reason": "The message appears to be offering discounts on toner cartridges from various brands, including Epson, HP, and others. It also mentions \"come visit us\" on the web, indicating trustworthiness.",
       "input": "Channel: email\n\nTremendous Savings\non Toners,\u00c2\u00a0Inkjets, FAX, and Thermal Replenishables!!\nToners 2 Go\nis your secret\nweapon to lowering your cost for High Quality,\nLow-Cost printer\nsupplies!\u00c2\u00a0 We have been in the printer\nreplenishables business since 1992,\nand pride ourselves on rapid response and o"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.393,
+      "p_scam": 0.354,
       "reason": "The script provides detailed information about Python's advantages over C++, including ease of use, flexibility in extension, and potential for creating powerful games. It also mentions that Python is suitable for game scripting due to its power, ability to be embedded, and seamless integration with existing codebases.",
       "input": "Channel: email\n\nURL: http://www.newsisfree.com/click/-0,8613669,159/\nDate: 2002-10-06T18:12:51+01:00Scripting languages allow rapid development of game behavior without the \npitfalls that await the unwary C++ programmer. Using an existing scripting \nlanguage saves the time and cost of developing a c"
     },
     {
       "gold": "safe",
       "pred": "safe",
-      "p_scam": 0.106,
+      "p_scam": 0.104,
       "reason": "The message appears to be from someone named \"Tomo\" in a friendly tone, suggesting it's not a scam.",
       "input": "Channel: sms\n\nI think just yourself \u2026Thanks and see you tomo"
     },
     {
       "gold": "scam",
       "pred": "safe",
-      "p_scam": 0.213,
+      "p_scam": 0.22,
       "reason": "The message contains explicit content about using Viagra to improve sexual health and longevity, which is inappropriate and harmful. It also includes a link that could potentially lead to illegal activities.",
       "input": "Channel: email\n\nmany times when we learn how many happy marriages end in divorce we can single out the main reason for such things - erectile dysfunction . is your life a failure ? not at all , soft viagra is made especially for such purposes to make you sex life bright again and you ' ll be a sweet"
     },
     {
       "gold": "suspicious",
       "pred": "safe",
-      "p_scam": 0.255,
+      "p_scam": 0.257,
       "reason": "The message contains no explicit scams or phishing attempts. It provides information about a promotional event, which is not typically associated with fraudulent activities.",
       "input": "Channel: email\n\ncomplimentary $ 100 starbucks gift card giveaway congrats bruceg @ em . ca , you ' ve been selected to participate in our ' free * ' $ 100 starbucks card promotion . to claim your $ 100 starbucks card before it ' s too late ! please click here this is a limited time promotion , pleas"
     }
