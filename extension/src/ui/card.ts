@@ -13,6 +13,8 @@ const COPY: Record<Verdict, { title: string; advice: string }> = {
   safe: { title: "No scam signs found", advice: "" },
 };
 
+const COPY_SHORT: Record<Verdict, string> = { scam: "Scam", suspicious: "Suspicious", safe: "Safe" };
+
 const CSS = `
 :host { all: initial; }
 * { box-sizing: border-box; }
@@ -43,7 +45,9 @@ const CSS = `
 .compact .title { font-weight: 500; }
 .reason { margin-top: 3px; }
 .advice { margin-top: 6px; color: var(--muted); font-size: 13px; }
-.meta { margin-top: 6px; color: var(--muted); font-size: 12px; display: flex; gap: 10px; align-items: center; }
+.meta { margin-top: 6px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.probs { display: flex; gap: 10px; font-variant-numeric: tabular-nums; }
+.probs .on { color: var(--fg); font-weight: 600; }
 .muted { color: var(--muted); }
 .brand { font-weight: 600; letter-spacing: .01em; }
 .cursor { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: currentColor; opacity: .5; animation: blink 1s steps(1) infinite; }
@@ -91,7 +95,11 @@ export function createCard(opts: CardOptions = {}): { host: HTMLElement; render:
       const compact = v === "safe" && opts.compactSafe;
       card.classList.add(v);
       if (compact) card.classList.add("compact");
-      const pct = Math.round(s.result.probabilities.scam * 100);
+      // All three probabilities: one number alone can look contradictory (a "suspicious"
+      // verdict with a 0% scam score), and the scam threshold is tuned low on purpose.
+      const probs = (["scam", "suspicious", "safe"] as const)
+        .map((k) => `<span class="${k === v ? "on" : ""}">${COPY_SHORT[k]} ${Math.round(s.result.probabilities[k] * 100)}%</span>`)
+        .join("");
       const reason = s.reason
         ? `<div class="reason">${escape(s.reason)}${s.reasonDone ? "" : '<span class="cursor" aria-hidden="true"></span>'}</div>`
         : s.reasonDone ? "" : '<div class="skeleton" style="width:90%"></div><div class="skeleton" style="width:60%"></div>';
@@ -101,7 +109,7 @@ export function createCard(opts: CardOptions = {}): { host: HTMLElement; render:
           <div class="title">${compact && brand ? `${brand}: ` : ""}${COPY[v].title}</div>
           ${compact ? "" : reason}
           ${!compact && COPY[v].advice ? `<div class="advice">${COPY[v].advice}</div>` : ""}
-          ${!compact ? `<div class="meta">${brand}<span>Scam likelihood ${pct}%</span></div>` : ""}
+          ${!compact ? `<div class="meta">${brand}<span class="probs">${probs}</span></div>` : ""}
         </div>`;
     }
     if (opts.onDismiss) {
