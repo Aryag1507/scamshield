@@ -29,7 +29,7 @@ function emailKey(e: OpenEmail): string {
 }
 
 function scan(): void {
-  if (!provider || !settings.autoScan) return clear();
+  if (!provider || !settings.email) return clear();
   const email = extractOpenEmail(document, provider);
   if (!email) return clear();
   const key = emailKey(email);
@@ -75,8 +75,8 @@ async function start(): Promise<void> {
   if (!provider) return;
   settings = { ...DEFAULT_SETTINGS, ...(await chrome.storage.sync.get(DEFAULT_SETTINGS)) } as Settings;
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && "autoScan" in changes) {
-      settings = { ...settings, autoScan: Boolean(changes.autoScan.newValue) };
+    if (area === "sync" && "email" in changes) {
+      settings = { ...settings, email: Boolean(changes.email.newValue) };
       scan();
     }
   });
@@ -88,4 +88,13 @@ async function start(): Promise<void> {
   scan();
 }
 
-void start();
+declare global {
+  interface Window {
+    __scamshieldEmail?: boolean;
+  }
+}
+// Registered and also injected into already-open tabs when turned on; run once per page.
+if (!window.__scamshieldEmail) {
+  window.__scamshieldEmail = true;
+  void start();
+}

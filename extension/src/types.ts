@@ -13,5 +13,7 @@ export type PortEvent =
   | { type: "reason-done"; reason: string }
   | { type: "error"; message: string };
 
-export type Settings = { autoScan: boolean };
-export const DEFAULT_SETTINGS: Settings = { autoScan: true };
+/** Each automatic check is opt-in: off until the user turns it on and grants that site access. */
+export type Feature = "chats" | "sites" | "email";
+export type Settings = Record<Feature, boolean>;
+export const DEFAULT_SETTINGS: Settings = { chats: false, sites: false, email: false };

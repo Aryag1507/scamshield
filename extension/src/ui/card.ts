@@ -53,6 +53,11 @@ const CSS = `
 .cursor { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: currentColor; opacity: .5; animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 .skeleton { height: 10px; border-radius: 4px; background: currentColor; opacity: .12; margin-top: 7px; }
+.actions { margin-top: 8px; display: flex; gap: 8px; }
+.action { all: unset; cursor: pointer; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--fg); }
+.action:hover { border-color: var(--muted); }
+.action:focus-visible { outline: 2px solid #2f5bea; outline-offset: 1px; }
 .close { all: unset; cursor: pointer; flex: none; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; color: var(--muted); }
 .close:hover { background: var(--border); color: var(--fg); }
 .close:focus-visible { outline: 2px solid #2f5bea; outline-offset: 1px; }
@@ -66,7 +71,8 @@ const ICONS: Record<Verdict, string> = {
   safe: '<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.5 2.5L16 9.5"/>',
 };
 
-export type CardOptions = { compactSafe?: boolean; onDismiss?: () => void; brand?: boolean };
+export type CardAction = { label: string; onClick: () => void };
+export type CardOptions = { compactSafe?: boolean; onDismiss?: () => void; brand?: boolean; actions?: CardAction[] };
 
 /** Create a shadow-rooted host element; call the returned render() with each new state. */
 export function createCard(opts: CardOptions = {}): { host: HTMLElement; render: (s: CardState) => void } {
@@ -111,6 +117,18 @@ export function createCard(opts: CardOptions = {}): { host: HTMLElement; render:
           ${!compact && COPY[v].advice ? `<div class="advice">${COPY[v].advice}</div>` : ""}
           ${!compact ? `<div class="meta">${brand}<span class="probs">${probs}</span></div>` : ""}
         </div>`;
+    }
+    if (s.kind === "result" && opts.actions?.length) {
+      const row = document.createElement("div");
+      row.className = "actions";
+      for (const a of opts.actions) {
+        const b = document.createElement("button");
+        b.className = "action";
+        b.textContent = a.label;
+        b.addEventListener("click", a.onClick);
+        row.append(b);
+      }
+      card.querySelector(".body")?.append(row);
     }
     if (opts.onDismiss) {
       const close = document.createElement("button");

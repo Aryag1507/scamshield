@@ -2,9 +2,14 @@
 
 Manifest V3, TypeScript, bundled with esbuild. Uses the live ScamShield API.
 
-- **In Gmail and Outlook on the web:** opening an email shows a banner above it. Scam or suspicious gets a full warning with a streamed explanation; safe gets a small dismissible chip.
-- **Anywhere:** select text, right-click → **Check with ScamShield** for a floating verdict card.
-- **Toolbar popup:** paste any message to check it, and turn automatic email checking on or off.
+Spam filters already catch most scam email, so the extension focuses on where scams get through: chats and websites. Every automatic check is **opt-in**; on install a welcome page offers three switches, and Chrome only grants a feature's sites when it's turned on.
+
+| Feature | What it does |
+|---|---|
+| **Chats** | WhatsApp Web, LinkedIn messages, Google Messages for web, Telegram Web, Discord DMs. When a stranger starts a conversation, checks their messages and shows a floating warning if it looks like a scam. |
+| **Websites** | Warns on unfamiliar sites that ask for a password, card details, or a crypto wallet / recovery phrase, with a "Trust this site" button. |
+| **Email** | Gmail and Outlook on the web: a banner above each opened email. Off by default. |
+| Always on | Right-click selected text → **Check with ScamShield**; toolbar popup to paste any message. |
 
 ## Install locally
 
@@ -13,33 +18,39 @@ npm install
 npm run build
 ```
 
-Then in Chrome: `chrome://extensions` → turn on **Developer mode** → **Load unpacked** → choose `extension/dist`.
+Chrome: `chrome://extensions` → **Developer mode** → **Load unpacked** → `extension/dist`.
 
 ## How it's built
 
 | File | Role |
 |---|---|
-| `src/background.ts` | Service worker; the only code that calls the API (pages' content security policies block direct calls). Streams the explanation back over a port; caches results by SHA-256 in `chrome.storage.session`. |
-| `src/extract.ts` | Finds the open email in Gmail/Outlook (sender, subject, body). Both sites can change their DOM, so every field has fallbacks and sender/subject are optional. |
-| `src/content.ts` | Watches the single-page app with a throttled `MutationObserver`, checks each email once, re-attaches the banner when the site re-renders, remembers dismissals. |
-| `src/ui/card.ts` | The verdict card, rendered in a Shadow DOM so host-page CSS can't affect it. Model output is HTML-escaped. |
-| `src/overlay.ts` | Floating card for right-click checks, injected only on demand (`activeTab`). |
+| `src/features.ts` | The three opt-in features: their sites, optional host permissions, and content script. |
+| `src/background.ts` | Service worker. The only code that calls the API (sites' content security policies block content scripts); streams explanations over ports; caches results by SHA-256 in `chrome.storage.session`. Registers a feature's content script only while it's switched on and its sites are granted, and re-syncs when access is revoked. |
+| `src/chat.ts` | Per-site readers for the open conversation, using stable markers (`is-outgoing`, `message-in`/`-out`, id prefixes) over generated class names. Decides which conversations are "new". |
+| `src/webrisk.ts` | Risky-page detection (password, card, wallet fields), trusted-domain list, page-to-model input. |
+| `src/extract.ts` | Gmail/Outlook email reader. |
+| `src/content-*.ts` | One content script per feature; throttled `MutationObserver`s for single-page apps. |
+| `src/ui/` | Verdict card in Shadow DOM (host CSS can't touch it; model output is HTML-escaped), floating card, opt-in switches. |
 
 ## Tests
 
 ```bash
-npm test                       # extraction unit tests against Gmail/Outlook fixture HTML
-node build.mjs --harness       # builds dev/dist for the test pages below
-python3 -m http.server 5500 --directory dev   # then open http://localhost:5500/gmail.html
+npm test                     # 23 unit tests: email, chat, and website readers on fixture HTML
+node build.mjs --harness     # builds dev/dist for the test pages
+python3 -m http.server 5500 --directory dev
 ```
 
-`dev/gmail.html` runs the real background, content, and overlay code against the live API, with a small `chrome.*` stand-in (`dev/chrome-mock.ts`); its buttons simulate opening emails and Gmail re-rendering. `dev/dist/popup.html` does the same for the popup.
+Test pages run the real background and content scripts against the live API with a small `chrome.*` stand-in (`dev/chrome-mock.ts`):
+`gmail.html` (email banner), `whatsapp.html` (stranger vs. friend chats, new messages, dismissal), `phishing.html` (fake login page, trust button), `dist/popup.html` (switches and manual checks).
 
-The extraction selectors are written against Gmail's and Outlook's current markup. They're verified on fixture pages, not inside a signed-in account, so check them in a real inbox after installing.
+The site readers are written against each site's current markup and verified on fixture pages, not inside signed-in accounts, so check them in a real account after installing. Facebook Messenger isn't supported: its markup doesn't reliably distinguish your messages from the other person's.
 
 ## Privacy
 
-- Emails are only read on Gmail and Outlook on the web, and only while automatic checking is on (toggle in the popup).
-- The text of the email you open (with its sender and subject) is sent over HTTPS to the ScamShield API, analyzed in memory, and discarded. The API never logs or stores message text.
-- The extension caches results in session storage keyed by a SHA-256 hash of the message, never the message itself; the cache is cleared when the browser closes.
-- No accounts, no analytics, no data sold or shared.
+- **Nothing is read until you turn a feature on**, and Chrome asks before ScamShield gets access to those sites. Turning a feature off stops it immediately; you can also revoke site access in Chrome's extension settings.
+- **Chats:** only conversations the other person started, where you've replied at most twice, are sent; the other person's latest few messages are checked. Ongoing chats with people you talk to are never sent. Safe conversations show nothing.
+- **Websites:** a page is sent only if it asks for a password, card details, or a crypto wallet **and** isn't a well-known site (big banks, Google, Apple, Amazon, PayPal, …) or one you've trusted. The page address (without the query string), title, and visible text are sent. Ordinary browsing is never sent.
+- **Email:** when on, the email you open (sender, subject, body) is sent.
+- Sent text goes over HTTPS to the ScamShield API, is analyzed in memory, and is discarded. The API never logs or stores message text.
+- The extension caches results in session storage keyed by a SHA-256 hash, never the message itself; the cache clears when the browser closes.
+- No accounts, no analytics, nothing sold or shared.

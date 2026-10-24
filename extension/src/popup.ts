@@ -1,12 +1,12 @@
-import { DEFAULT_SETTINGS } from "./types";
 import { createCard } from "./ui/card";
 import { runCheck } from "./ui/check";
+import { renderSettings, SETTINGS_CSS } from "./ui/settings";
+import { guessChannel } from "./webrisk";
 
 const form = document.getElementById("form") as HTMLFormElement;
 const textarea = document.getElementById("text") as HTMLTextAreaElement;
 const submit = document.getElementById("submit") as HTMLButtonElement;
 const resultSlot = document.getElementById("result") as HTMLDivElement;
-const autoscan = document.getElementById("autoscan") as HTMLInputElement;
 
 let cancel = () => {};
 
@@ -17,8 +17,7 @@ function check(): void {
   const { host, render } = createCard({ brand: false });
   resultSlot.replaceChildren(host);
   submit.disabled = true;
-  const channel = /^https?:\/\/\S+$/.test(text) ? "webpage" : text.length > 600 ? "email" : "sms";
-  cancel = runCheck({ text, channel }, (s) => {
+  cancel = runCheck({ text, channel: guessChannel(text) }, (s) => {
     render(s);
     if (s.kind !== "checking") submit.disabled = false;
   }, true);
@@ -35,7 +34,7 @@ textarea.addEventListener("keydown", (e) => {
   }
 });
 
-void chrome.storage.sync.get(DEFAULT_SETTINGS).then((s) => {
-  autoscan.checked = Boolean(s.autoScan);
-});
-autoscan.addEventListener("change", () => void chrome.storage.sync.set({ autoScan: autoscan.checked }));
+const style = document.createElement("style");
+style.textContent = SETTINGS_CSS;
+document.head.append(style);
+void renderSettings(document.getElementById("features") as HTMLElement);

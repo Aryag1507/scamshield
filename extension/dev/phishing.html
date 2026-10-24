@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Fake PayPal login served from localhost (an untrusted host): the real website content
+     script (dev/web-harness.ts) should check it against the live API and warn. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayPal: Log in to your account</title>
+  <style>
+    body { margin: 0; font: 15px/1.5 Arial, sans-serif; background: #f5f7fa; display: grid; place-items: center; min-height: 100vh; }
+    form { background: #fff; padding: 32px; border-radius: 12px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,.08); display: grid; gap: 12px; }
+    input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font: inherit; }
+    button { padding: 12px; border: 0; border-radius: 24px; background: #0070ba; color: #fff; font: inherit; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <form onsubmit="return false">
+    <h2 style="margin:0">PayPal</h2>
+    <p style="margin:0;color:#c00">Your account has been limited. Log in within 24 hours to restore access or it will be permanently closed.</p>
+    <input type="email" name="login_email" placeholder="Email or mobile number" />
+    <input type="password" name="login_password" placeholder="Password" />
+    <button>Log In</button>
+  </form>
+  <script src="dist/web-harness.js"></script>
+</body>
+</html>

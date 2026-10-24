@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Welcome to ScamShield</title>
+  <style>
+    :root { --bg: #f7f7f5; --surface: #fff; --fg: #16181d; --muted: #5d6370; --border: #e3e3df; --accent: #2f5bea; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #101114; --surface: #17191e; --fg: #ecedef; --muted: #9aa0ab; --border: #2a2d34; --accent: #7c9cff; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 620px; margin: 0 auto; padding: 56px 20px; }
+    h1 { font-size: 30px; line-height: 1.15; letter-spacing: -.01em; margin: 16px 0 8px; }
+    .lede { color: var(--muted); margin: 0 0 28px; font-size: 16px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 10px 8px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 32px 0 10px; }
+    ul.how { padding-left: 18px; margin: 0; color: var(--muted); }
+    ul.how li { margin: 6px 0; }
+    ul.how strong { color: var(--fg); font-weight: 600; }
+    .note { color: var(--muted); font-size: 13px; margin-top: 28px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6.2c0 4.7 3.3 8.6 8 9.8 4.7-1.2 8-5.1 8-9.8V5.5l-8-3Z" fill="#2f5bea"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>ScamShield is installed</h1>
+    <p class="lede">Choose what it should check for you. Everything is off until you turn it on, and Chrome will ask before ScamShield can see a site.</p>
+
+    <div class="panel"><div class="features" id="features"></div></div>
+
+    <h2>Always available</h2>
+    <ul class="how">
+      <li><strong>Right-click any selected text</strong> → “Check with ScamShield”.</li>
+      <li><strong>Click the toolbar icon</strong> to paste a message from your phone or anywhere else.</li>
+    </ul>
+
+    <p class="note">
+      Messages are checked by ScamShield's own AI model and never stored or logged.
+      <a href="https://github.com/Aryag1507/scamshield/tree/main/extension#privacy" target="_blank" rel="noreferrer">Privacy details</a>
+    </p>
+  </main>
+  <script src="welcome.js"></script>
+</body>
+</html>

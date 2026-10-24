@@ -13,7 +13,7 @@ General chatbots can spot scams if you copy-paste into them. Nobody does that. S
 ```mermaid
 flowchart LR
     subgraph Users
-        EXT[Chrome extension<br/>Gmail · Outlook · any page]
+        EXT[Chrome extension<br/>chats · risky websites · email]
         WEB[Website<br/>paste a message, works on phones]
         MAIL[Forward-to-check<br/>check@ inbox]
     end
@@ -174,7 +174,7 @@ Findings:
 - [x] Inference API (`serve/`): FastAPI on CPU, deployed on Modal
 - [x] Website with paste-to-check (`web/`)
 - [ ] Website deployed on Vercel
-- [x] Chrome extension (`extension/`): banner in Gmail / Outlook, right-click check on any page, toolbar popup
+- [x] Chrome extension (`extension/`): opt-in checks for chats (WhatsApp, LinkedIn, Google Messages, Telegram, Discord), risky websites, and email; right-click check; toolbar popup
 - [ ] Publish the extension to the Chrome Web Store
 - [ ] Forward-to-check email address
 - [ ] Feedback button → logged false positives/negatives → next training round

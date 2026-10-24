@@ -9,7 +9,8 @@
  */
 
 import { ApiError, checkVerdict, streamReason } from "./api";
-import { type CheckInput, type CheckResult, PORT_NAME, type PortEvent, type PortRequest } from "./types";
+import { FEATURE_IDS, FEATURES } from "./features";
+import { type CheckInput, type CheckResult, DEFAULT_SETTINGS, PORT_NAME, type PortEvent, type PortRequest, type Settings } from "./types";
 
 const MENU_ID = "scamshield-check-selection";
 
@@ -53,8 +54,57 @@ chrome.runtime.onConnect.addListener((port) => {
   });
 });
 
-chrome.runtime.onInstalled.addListener(() => {
+/**
+ * Keep registered content scripts in line with the user's switches and granted permissions.
+ * A feature's script runs only when it's switched on AND Chrome has granted its sites
+ * (the user can revoke access from Chrome's settings at any time).
+ */
+async function syncContentScripts(): Promise<void> {
+  const settings = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as Settings;
+  const registered = new Set((await chrome.scripting.getRegisteredContentScripts()).map((s) => s.id));
+  for (const id of FEATURE_IDS) {
+    const f = FEATURES[id];
+    // Switching a feature off stops its script; access itself isn't revoked here because
+    // "Websites" (all sites) overlaps the chat and email sites. Chrome's settings can revoke it.
+    const granted = await chrome.permissions.contains({ origins: f.origins });
+    const want = settings[id] && granted;
+    if (want && !registered.has(id)) {
+      await chrome.scripting.registerContentScripts([
+        { id, js: [f.script], matches: f.matches, excludeMatches: f.excludeMatches, runAt: "document_idle" },
+      ]);
+      await injectIntoOpenTabs(id); // registration only affects pages loaded from now on
+    } else if (!want && registered.has(id)) {
+      await chrome.scripting.unregisterContentScripts({ ids: [id] });
+    }
+    if (settings[id] && !granted) await chrome.storage.sync.set({ [id]: false }); // access was revoked
+  }
+}
+
+async function injectIntoOpenTabs(id: keyof Settings): Promise<void> {
+  if (id === "sites") return; // only pages loaded after opting in; no sweep of every open tab
+  const tabs = await chrome.tabs.query({ url: FEATURES[id].matches });
+  await Promise.all(
+    tabs.map((t) => t.id && chrome.scripting.executeScript({ target: { tabId: t.id }, files: [FEATURES[id].script] }).catch(() => {})),
+  );
+}
+
+// Several events can fire together; registering the same script id twice throws, so run
+// syncs one after another.
+let syncing: Promise<void> = Promise.resolve();
+function scheduleSync(): void {
+  syncing = syncing.then(syncContentScripts).catch((e) => console.error("ScamShield: script sync failed", e));
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync" && FEATURE_IDS.some((id) => id in changes)) scheduleSync();
+});
+chrome.permissions.onRemoved.addListener(scheduleSync);
+chrome.runtime.onStartup.addListener(scheduleSync);
+
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.contextMenus.create({ id: MENU_ID, title: "Check with ScamShield", contexts: ["selection"] });
+  if (details.reason === "install") void chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
+  scheduleSync();
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

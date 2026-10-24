@@ -23,8 +23,9 @@
                      font: inherit; font-weight: 500; cursor: pointer; }
     button.primary:disabled { opacity: .6; cursor: default; }
     button.primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    footer { border-top: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
-    label.toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    section.auto { border-top: 1px solid var(--border); padding: 10px 6px 4px; }
+    section.auto h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 10px 4px; }
+    footer { padding: 4px 16px 12px; font-size: 12px; text-align: right; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
   </style>
@@ -45,8 +46,11 @@
     </form>
     <div id="result"></div>
   </main>
+  <section class="auto">
+    <h2>Check automatically</h2>
+    <div class="features" id="features"></div>
+  </section>
   <footer>
-    <label class="toggle"><input type="checkbox" id="autoscan" /> Check emails I open in Gmail &amp; Outlook</label>
     <a href="https://github.com/Aryag1507/scamshield/tree/main/extension#privacy" target="_blank" rel="noreferrer">Privacy</a>
   </footer>
   <script src="popup.js"></script>

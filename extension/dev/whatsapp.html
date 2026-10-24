@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- WhatsApp-shaped test page: runs the real background + chat content script
+     (dev/chat-harness.ts, built to read this page as web.whatsapp.com) against the live API. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhatsApp test page · ScamShield</title>
+  <style>
+    body { margin: 0; font: 14px/1.45 -apple-system, "Segoe UI", sans-serif; background: #efeae2; }
+    nav { padding: 10px 16px; display: flex; gap: 8px; flex-wrap: wrap; background: #fff; border-bottom: 1px solid #ddd; }
+    nav button { border: 1px solid #ccc; background: #fff; border-radius: 16px; padding: 4px 12px; cursor: pointer; }
+    #main { max-width: 640px; margin: 16px auto; }
+    header { background: #f0f2f5; padding: 10px 16px; font-weight: 600; border-radius: 8px 8px 0 0; }
+    .list { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+    .message-in, .message-out { max-width: 75%; padding: 6px 10px; border-radius: 8px; }
+    .message-in { background: #fff; align-self: flex-start; }
+    .message-out { background: #d9fdd3; align-self: flex-end; }
+  </style>
+</head>
+<body>
+  <nav>
+    <button data-open="stranger">Open: stranger (crypto opener)</button>
+    <button data-open="friend">Open: chat with Mom</button>
+    <button data-open="none">Close chat</button>
+    <button id="incoming">Stranger sends another message</button>
+  </nav>
+  <div id="slot"></div>
+  <script>
+    const chats = {
+      stranger: { name: "+1 (415) 555-0142", msgs: [["in", "Hi! Sorry, wrong number I think 😅"], ["in", "You seem nice though. I'm a crypto trader in Singapore, my uncle taught me a strategy that made 30% last month. Want me to show you?"]] },
+      friend: { name: "Mom", msgs: [["out", "on my way"], ["in", "Dinner at 7? Dad is making lasagna"], ["out", "yes!"], ["out", "bringing the charger"], ["in", "Can you send me $40 for groceries, I'll pay you back"], ["out", "sure, venmo'd"]] },
+    };
+    const slot = document.getElementById("slot");
+    const bubble = ([dir, text]) => `<div class="message-${dir}"><div class="copyable-text"><span class="selectable-text"><span>${text}</span></span></div></div>`;
+    function open(id) {
+      if (id === "none") { slot.innerHTML = ""; return; }
+      const c = chats[id];
+      slot.innerHTML = `<div id="main"><header><span dir="auto" title="${c.name}">${c.name}</span></header><div class="list">${c.msgs.map(bubble).join("")}</div></div>`;
+    }
+    document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => open(b.dataset.open)));
+    document.getElementById("incoming").addEventListener("click", () => {
+      chats.stranger.msgs.push(["in", "Just download the app and deposit $200 to start, I'll guide you step by step."]);
+      if (slot.querySelector("header span[title='+1 (415) 555-0142']")) open("stranger");
+    });
+  </script>
+  <script src="dist/chat-harness.js"></script>
+</body>
+</html>

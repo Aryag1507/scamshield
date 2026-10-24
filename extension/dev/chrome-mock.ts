@@ -36,15 +36,39 @@ const store = (initial: Record<string, unknown> = {}) => ({
 const onChanged = event<[Record<string, unknown>, string]>();
 const sync = store();
 
+const granted = new Set<string>();
+const registered = new Map<string, unknown>();
+
 (globalThis as any).chrome = {
+  permissions: {
+    // The test page auto-approves (a real browser shows Chrome's prompt here).
+    async request({ origins }: { origins: string[] }) { origins.forEach((o) => granted.add(o)); return true; },
+    async contains({ origins }: { origins: string[] }) { return origins.every((o) => granted.has(o) || granted.has("<all_urls>")); },
+    async remove({ origins }: { origins: string[] }) { origins.forEach((o) => granted.delete(o)); return true; },
+    onRemoved: event<[]>(),
+    _granted: granted,
+  },
   runtime: {
     connect: ({ name }: { name: string }) => { const [page, bg] = makePortPair(name); setTimeout(() => onConnect.fire(bg)); return page; },
     onConnect,
     onInstalled: event<[]>(),
+    onStartup: event<[]>(),
+    getURL: (p: string) => p,
     onMessage: event<[unknown]>(),
   },
   storage: { session: store(), sync, onChanged },
   contextMenus: { create() {}, onClicked: event<[]>() },
-  scripting: { async executeScript() {} },
-  tabs: { async sendMessage() {} },
+  scripting: {
+    async executeScript() {},
+    async getRegisteredContentScripts() { return [...registered.values()]; },
+    async registerContentScripts(scripts: { id: string }[]) {
+      for (const sc of scripts) {
+        if (registered.has(sc.id)) throw new Error(`Duplicate script ID '${sc.id}'`);
+        registered.set(sc.id, sc);
+      }
+    },
+    async unregisterContentScripts({ ids }: { ids: string[] }) { ids.forEach((id) => registered.delete(id)); },
+    _registered: registered,
+  },
+  tabs: { async sendMessage() {}, async query() { return []; }, async create() {} },
 };
