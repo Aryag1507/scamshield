@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Gmail-shaped test page: runs the real background + content scripts (dev/harness.ts)
+     against the live API. Buttons simulate Gmail's single-page navigation. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gmail test page · ScamShield</title>
+  <style>
+    body { font: 14px/1.5 Arial, sans-serif; margin: 0; background: #f6f8fc; color: #1f1f1f; }
+    nav { padding: 10px 16px; display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #ddd; background: #fff; }
+    nav button { border: 1px solid #ccc; background: #fff; border-radius: 16px; padding: 4px 12px; cursor: pointer; }
+    .view { max-width: 760px; margin: 16px auto; background: #fff; border-radius: 12px; padding: 20px 24px; }
+    h2.hP { font-size: 22px; font-weight: 400; margin: 0 0 16px; }
+    .sender { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <nav>
+    <button data-open="scam">Open: PayPal phishing</button>
+    <button data-open="safe">Open: Amazon order shipped</button>
+    <button data-open="suspicious">Open: Vague job offer</button>
+    <button data-open="inbox">Back to inbox</button>
+    <button id="rerender">Simulate Gmail re-render</button>
+  </nav>
+  <div role="main" id="main" class="view"></div>
+  <script>
+    const emails = {
+      scam: { subject: "Your account has been limited", name: "PayPal Security", email: "security@paypa1-support.com",
+        body: "We noticed unusual activity on your PayPal account and have limited it.<br><br>Confirm your identity within 24 hours or your account will be permanently closed: <a href='#'>http://paypa1-verify.co/login</a>" },
+      safe: { subject: "Your Amazon.com order has shipped", name: "Amazon.com", email: "auto-confirm@amazon.com",
+        body: "Hi Arya,<br><br>Your package with \"USB-C Cable (2-pack)\" has shipped and will arrive Thursday. You can track it in Your Orders." },
+      suspicious: { subject: "Opportunity", name: "Recruiter", email: "jobs.hr.team2026@gmail.com",
+        body: "Hello, we found your profile and have a remote position that pays very well for a few hours a week. Message me on Telegram @hr_team_2026 for details." },
+    };
+    const main = document.getElementById("main");
+    function open(id) {
+      if (id === "inbox") { main.innerHTML = "<table><tr><td>Inbox · 3 conversations</td></tr></table>"; return; }
+      const e = emails[id];
+      main.innerHTML = `<h2 class="hP">${e.subject}</h2>
+        <div class="gs"><div class="adn"><h3><span class="gD sender" email="${e.email}" name="${e.name}">${e.name}</span>
+        <span>&lt;${e.email}&gt;</span></h3><div class="a3s">${e.body}</div></div></div>`;
+    }
+    document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => open(b.dataset.open)));
+    // Gmail often rebuilds the message DOM; this replaces the body node with an identical copy.
+    document.getElementById("rerender").addEventListener("click", () => {
+      const body = main.querySelector(".a3s");
+      if (body) body.parentElement.replaceChild(body.cloneNode(true), body);
+      main.querySelector("scamshield-card")?.remove();
+    });
+    open("inbox");
+  </script>
+  <script src="dist/harness.js"></script>
+</body>
+</html>

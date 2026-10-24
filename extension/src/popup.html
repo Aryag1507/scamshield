@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScamShield</title>
+  <style>
+    :root { --bg: #f7f7f5; --surface: #fff; --fg: #16181d; --muted: #5d6370; --border: #e3e3df; --accent: #2f5bea; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #101114; --surface: #17191e; --fg: #ecedef; --muted: #9aa0ab; --border: #2a2d34; --accent: #7c9cff; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; width: 380px; background: var(--bg); color: var(--fg);
+           font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    header { display: flex; align-items: center; gap: 8px; padding: 14px 16px 8px; font-weight: 600; }
+    main { padding: 0 16px 14px; }
+    textarea { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--border); border-radius: 10px;
+               background: var(--surface); color: var(--fg); padding: 10px 12px; font: inherit; outline: none; }
+    textarea:focus { border-color: var(--accent); }
+    .row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 8px; }
+    .hint { color: var(--muted); font-size: 12px; }
+    button.primary { border: 0; border-radius: 999px; background: var(--accent); color: #fff; padding: 7px 16px;
+                     font: inherit; font-weight: 500; cursor: pointer; }
+    button.primary:disabled { opacity: .6; cursor: default; }
+    button.primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    footer { border-top: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+    label.toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6.2c0 4.7 3.3 8.6 8 9.8 4.7-1.2 8-5.1 8-9.8V5.5l-8-3Z" fill="#2f5bea"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    ScamShield
+  </header>
+  <main>
+    <form id="form">
+      <label for="text" class="hint" style="display:block;margin-bottom:6px">Paste a text, email, or DM you're not sure about</label>
+      <textarea id="text" maxlength="50000" autofocus></textarea>
+      <div class="row">
+        <span class="hint">⌘/Ctrl + Enter to check</span>
+        <button class="primary" id="submit" type="submit">Check</button>
+      </div>
+    </form>
+    <div id="result"></div>
+  </main>
+  <footer>
+    <label class="toggle"><input type="checkbox" id="autoscan" /> Check emails I open in Gmail &amp; Outlook</label>
+    <a href="https://github.com/Aryag1507/scamshield/tree/main/extension#privacy" target="_blank" rel="noreferrer">Privacy</a>
+  </footer>
+  <script src="popup.js"></script>
+</body>
+</html>

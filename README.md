@@ -174,6 +174,7 @@ Findings:
 - [x] Inference API (`serve/`): FastAPI on CPU, deployed on Modal
 - [x] Website with paste-to-check (`web/`)
 - [ ] Website deployed on Vercel
-- [ ] Chrome extension for Gmail / Outlook / any page (`extension/`), published to the Chrome Web Store
+- [x] Chrome extension (`extension/`): banner in Gmail / Outlook, right-click check on any page, toolbar popup
+- [ ] Publish the extension to the Chrome Web Store
 - [ ] Forward-to-check email address
 - [ ] Feedback button → logged false positives/negatives → next training round

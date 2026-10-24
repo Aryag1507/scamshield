@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "ScamShield",
+  "version": "0.1.0",
+  "description": "Warns you about scam emails in Gmail and Outlook, and checks any text you select, using a fine-tuned AI model.",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": { "default_popup": "popup.html", "default_title": "ScamShield", "default_icon": { "16": "icons/16.png", "32": "icons/32.png" } },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["storage", "contextMenus", "activeTab", "scripting"],
+  "host_permissions": ["https://aryag1507--scamshield-api-web.us-east.modal.run/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*", "https://outlook.live.com/*", "https://outlook.office.com/*", "https://outlook.office365.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
