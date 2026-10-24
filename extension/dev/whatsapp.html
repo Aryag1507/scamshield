@@ -22,6 +22,7 @@
   <nav>
     <button data-open="stranger">Open: stranger (crypto opener)</button>
     <button data-open="friend">Open: chat with Mom</button>
+    <button data-open="driver">Open: stranger (delivery driver)</button>
     <button data-open="none">Close chat</button>
     <button id="incoming">Stranger sends another message</button>
   </nav>
@@ -29,6 +30,7 @@
   <script>
     const chats = {
       stranger: { name: "+1 (415) 555-0142", msgs: [["in", "Hi! Sorry, wrong number I think 😅"], ["in", "You seem nice though. I'm a crypto trader in Singapore, my uncle taught me a strategy that made 30% last month. Want me to show you?"]] },
+      driver: { name: "+1 (512) 555-0177", msgs: [["in", "Hi, this is Marco with your DoorDash order. I'm downstairs at the front entrance with your order. Have a good night!"]] },
       friend: { name: "Mom", msgs: [["out", "on my way"], ["in", "Dinner at 7? Dad is making lasagna"], ["out", "yes!"], ["out", "bringing the charger"], ["in", "Can you send me $40 for groceries, I'll pay you back"], ["out", "sure, venmo'd"]] },
     };
     const slot = document.getElementById("slot");

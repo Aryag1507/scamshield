@@ -5,10 +5,13 @@ import { cpSync, mkdirSync, rmSync } from "node:fs";
 
 const watch = process.argv.includes("--watch");
 const harness = process.argv.includes("--harness");
-rmSync("dist", { recursive: true, force: true });
-mkdirSync("dist", { recursive: true });
-for (const f of ["manifest.json", "popup.html", "welcome.html"]) cpSync(`src/${f}`, `dist/${f}`);
-cpSync("icons", "dist/icons", { recursive: true });
+// The test-page build writes only to dev/dist; it must never touch the real extension in dist/.
+if (!harness) {
+  rmSync("dist", { recursive: true, force: true });
+  mkdirSync("dist", { recursive: true });
+  for (const f of ["manifest.json", "popup.html", "welcome.html"]) cpSync(`src/${f}`, `dist/${f}`);
+  cpSync("icons", "dist/icons", { recursive: true });
+}
 
 const options = {
   entryPoints: {

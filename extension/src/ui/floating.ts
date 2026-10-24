@@ -6,7 +6,7 @@ import type { CardState } from "./check";
  * no natural spot inside the page: right-click checks, chats, and websites. Escape or the
  * close button dismisses it.
  */
-export function showFloating(opts: { onDismiss?: () => void; actions?: CardAction[] } = {}) {
+export function showFloating(opts: { onDismiss?: () => void; actions?: CardAction[]; compactSafe?: boolean } = {}) {
   const frame = document.createElement("div");
   frame.style.cssText = "position:fixed;top:16px;right:16px;z-index:2147483647;width:min(380px,calc(100vw - 32px));";
   const onKey = (e: KeyboardEvent) => {
@@ -23,7 +23,7 @@ export function showFloating(opts: { onDismiss?: () => void; actions?: CardActio
   const dismiss = () => {
     if (remove()) opts.onDismiss?.();
   };
-  const { host, render } = createCard({ onDismiss: dismiss, actions: opts.actions });
+  const { host, render } = createCard({ onDismiss: dismiss, actions: opts.actions, compactSafe: opts.compactSafe });
   frame.append(host);
   document.documentElement.append(frame);
   document.addEventListener("keydown", onKey, true);

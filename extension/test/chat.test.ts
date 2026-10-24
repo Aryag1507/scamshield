@@ -47,8 +47,32 @@ test("linkedin: other person's messages vs. the user's reply", () => {
   assert.ok(shouldCheck(c));
 });
 
-test("linkedin: feed pages are ignored", () => {
-  assert.equal(read("linkedin.html", "https://www.linkedin.com/feed/"), null);
+test("linkedin InMail without --other markers: sender name matches the thread, subject included", () => {
+  const c = read("linkedin-inmail.html", "https://www.linkedin.com/messaging/thread/2-xyz/");
+  assert.ok(c);
+  assert.equal(c.contact, "Patel Harshil");
+  assert.equal(c.incoming.length, 2, "second message inherits the group's sender");
+  assert.match(c.incoming[0], /^Let's Discuss Your Career Goals\nHi Arya/);
+  assert.equal(c.outgoingCount, 0);
+  assert.ok(shouldCheck(c));
+});
+
+test("linkedin: a thread with only the user's own message has nothing to check", () => {
+  const c = read("linkedin-mine.html", "https://www.linkedin.com/messaging/thread/2-abc/");
+  assert.ok(c);
+  assert.equal(c.incoming.length, 0);
+  assert.equal(c.outgoingCount, 1);
+  assert.equal(shouldCheck(c), false);
+});
+
+test("linkedin: a page with no open conversation (e.g. the feed) is ignored", () => {
+  assert.equal(read("linkedin-feed.html", "https://www.linkedin.com/feed/"), null);
+});
+
+test("linkedin: a conversation inside the /preload/ messaging iframe is read", () => {
+  const c = read("linkedin-inmail.html", "https://www.linkedin.com/preload/?_bprMode=vanilla");
+  assert.ok(c);
+  assert.equal(c.incoming.length, 2);
 });
 
 test("telegram web K: strips trailing timestamps, splits in/out", () => {

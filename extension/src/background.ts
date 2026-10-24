@@ -61,16 +61,23 @@ chrome.runtime.onConnect.addListener((port) => {
  */
 async function syncContentScripts(): Promise<void> {
   const settings = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as Settings;
-  const registered = new Set((await chrome.scripting.getRegisteredContentScripts()).map((s) => s.id));
+  const registeredScripts = await chrome.scripting.getRegisteredContentScripts();
+  const registered = new Set(registeredScripts.map((s) => s.id));
   for (const id of FEATURE_IDS) {
     const f = FEATURES[id];
     // Switching a feature off stops its script; access itself isn't revoked here because
     // "Websites" (all sites) overlaps the chat and email sites. Chrome's settings can revoke it.
     const granted = await chrome.permissions.contains({ origins: f.origins });
     const want = settings[id] && granted;
+    const existing = registeredScripts.find((r) => r.id === id);
+    if (want && existing && Boolean(existing.allFrames) !== Boolean(f.allFrames)) {
+      // Registered by an older version with different options: re-register.
+      await chrome.scripting.unregisterContentScripts({ ids: [id] });
+      registered.delete(id);
+    }
     if (want && !registered.has(id)) {
       await chrome.scripting.registerContentScripts([
-        { id, js: [f.script], matches: f.matches, excludeMatches: f.excludeMatches, runAt: "document_idle" },
+        { id, js: [f.script], matches: f.matches, excludeMatches: f.excludeMatches, allFrames: f.allFrames ?? false, runAt: "document_idle" },
       ]);
       await injectIntoOpenTabs(id); // registration only affects pages loaded from now on
     } else if (!want && registered.has(id)) {
@@ -84,7 +91,7 @@ async function injectIntoOpenTabs(id: keyof Settings): Promise<void> {
   if (id === "sites") return; // only pages loaded after opting in; no sweep of every open tab
   const tabs = await chrome.tabs.query({ url: FEATURES[id].matches });
   await Promise.all(
-    tabs.map((t) => t.id && chrome.scripting.executeScript({ target: { tabId: t.id }, files: [FEATURES[id].script] }).catch(() => {})),
+    tabs.map((t) => t.id && chrome.scripting.executeScript({ target: { tabId: t.id, allFrames: FEATURES[id].allFrames ?? false }, files: [FEATURES[id].script] }).catch(() => {})),
   );
 }
 
@@ -105,6 +112,14 @@ chrome.runtime.onInstalled.addListener((details) => {
   chrome.contextMenus.create({ id: MENU_ID, title: "Check with ScamShield", contexts: ["selection"] });
   if (details.reason === "install") void chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
   scheduleSync();
+  // A reload or update disconnects content scripts already running in open tabs, so
+  // re-attach to tabs for every enabled feature (the scripts guard against running twice).
+  if (details.reason === "update") {
+    syncing = syncing.then(async () => {
+      const settings = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as Settings;
+      for (const id of FEATURE_IDS) if (settings[id]) await injectIntoOpenTabs(id);
+    });
+  }
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

@@ -22,6 +22,8 @@ type FeatureDef = {
   script: string;
   matches: string[];
   excludeMatches?: string[];
+  /** Also run inside same-site frames (LinkedIn renders messaging in an iframe). */
+  allFrames?: boolean;
 };
 
 export const FEATURES: Record<Feature, FeatureDef> = {
@@ -31,6 +33,7 @@ export const FEATURES: Record<Feature, FeatureDef> = {
     origins: CHAT_SITES,
     script: "content-chat.js",
     matches: CHAT_SITES,
+    allFrames: true,
   },
   sites: {
     title: "Websites",

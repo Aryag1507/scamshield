@@ -49,6 +49,7 @@ const registered = new Map<string, unknown>();
     _granted: granted,
   },
   runtime: {
+    id: "scamshield-test-page", // real extensions always have one; content scripts check it
     connect: ({ name }: { name: string }) => { const [page, bg] = makePortPair(name); setTimeout(() => onConnect.fire(bg)); return page; },
     onConnect,
     onInstalled: event<[]>(),

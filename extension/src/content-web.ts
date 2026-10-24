@@ -7,7 +7,7 @@
  */
 
 import { isRisky, isTrusted, pageInput, riskSignals } from "./webrisk";
-import { runCheck } from "./ui/check";
+import { runCheck, extensionAlive } from "./ui/check";
 import { showFloating } from "./ui/floating";
 
 declare global {
@@ -24,6 +24,7 @@ async function trustedSites(): Promise<string[]> {
 
 let checked = false;
 async function evaluate(): Promise<void> {
+  if (!extensionAlive()) return; // orphaned by an extension reload; the new copy takes over
   if (checked) return;
   const url = new URL(location.href);
   if (!/^https?:$/.test(url.protocol)) return;

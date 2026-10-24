@@ -12,7 +12,7 @@
 import { extractOpenEmail, type OpenEmail, type Provider, providerFor } from "./extract";
 import { DEFAULT_SETTINGS, type Settings } from "./types";
 import { createCard } from "./ui/card";
-import { runCheck } from "./ui/check";
+import { runCheck, extensionAlive } from "./ui/check";
 
 // Set only by the dev/test-page build (build.mjs --harness); compiled away in the real build.
 declare const __TEST_PROVIDER__: Provider | undefined;
@@ -29,6 +29,7 @@ function emailKey(e: OpenEmail): string {
 }
 
 function scan(): void {
+  if (!extensionAlive()) return; // orphaned by an extension reload; the new copy takes over
   if (!provider || !settings.email) return clear();
   const email = extractOpenEmail(document, provider);
   if (!email) return clear();

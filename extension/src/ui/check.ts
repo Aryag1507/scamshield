@@ -6,6 +6,18 @@ export type CardState =
   | { kind: "error"; message: string };
 
 /**
+ * False once the extension has been reloaded or updated: content scripts already running in
+ * a tab are orphaned (they can't reach the background any more) and should stop.
+ */
+export const extensionAlive = (): boolean => {
+  try {
+    return !!chrome.runtime?.id;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Ask the background worker to check a message. Calls onState as the verdict and then
  * the explanation stream in. Returns a cancel function that closes the port, which
  * aborts the request in the background too.

@@ -39,7 +39,9 @@ export function readConversation(doc: Document, url: URL): Conversation | null {
   switch (url.hostname) {
     case "web.whatsapp.com": return whatsapp(doc);
     case "messages.google.com": return googleMessages(doc);
-    case "www.linkedin.com": return url.pathname.startsWith("/messaging") || doc.querySelector(".msg-overlay-conversation-bubble") ? linkedin(doc) : null;
+    // Not gated on the URL: LinkedIn now renders messaging inside a /preload/ iframe, and chat
+    // bubbles open on any page. linkedin() returns null when no conversation is open.
+    case "www.linkedin.com": return linkedin(doc);
     case "web.telegram.org": return telegram(doc);
     case "discord.com": return url.pathname.startsWith("/channels/@me/") ? discord(doc) : null;
     default: return null;
@@ -71,16 +73,42 @@ function googleMessages(doc: Document): Conversation | null {
   return { site: "google-messages", channel: "sms", contact, incoming, outgoingCount };
 }
 
-/** LinkedIn messaging: events in .msg-s-message-list; the other person's are --other. */
+/**
+ * LinkedIn messaging (full page and overlay bubbles). A message is the other person's if
+ * LinkedIn marks it (--other), or if the sender name shown above its group matches the
+ * conversation's name. InMail subject lines are included: they carry signal.
+ */
 function linkedin(doc: Document): Conversation | null {
-  const list = doc.querySelector(".msg-s-message-list, .msg-overlay-conversation-bubble");
+  const list = doc.querySelector(".msg-s-message-list, .msg-overlay-conversation-bubble, .msg-thread");
   if (!list) return null;
-  const items = [...list.querySelectorAll(".msg-s-event-listitem")];
-  const body = (m: Element) => text(m.querySelector(".msg-s-event-listitem__body"));
-  const incoming = nonEmpty(items.filter((m) => m.classList.contains("msg-s-event-listitem--other")).map(body));
-  const outgoingCount = items.filter((m) => !m.classList.contains("msg-s-event-listitem--other")).length;
-  const contact = text(doc.querySelector(".msg-entity-lockup__entity-title, .msg-thread__link-to-profile h2, .msg-overlay-bubble-header__title")) || undefined;
+  const contact = text(doc.querySelector(
+    ".msg-entity-lockup__entity-title, .msg-thread__link-to-profile h2, .msg-overlay-bubble-header__title, .msg-s-profile-card .artdeco-entity-lockup__title",
+  )) || undefined;
+  const events = [...list.querySelectorAll("li.msg-s-message-list__event")];
+  const items = events.length ? events : [...list.querySelectorAll(".msg-s-event-listitem")];
+
+  const incoming: string[] = [];
+  let outgoingCount = 0;
+  let author = "";
+  for (const item of items) {
+    const name = text(item.querySelector(".msg-s-message-group__name, .msg-s-message-group__profile-link"));
+    if (name) author = name;
+    const subject = text(item.querySelector(".msg-s-event-listitem__subject"));
+    const body = text(item.querySelector(".msg-s-event-listitem__body, [class*='event-listitem__body']"));
+    const content = [subject, body].filter(Boolean).join("\n");
+    if (!content) continue;
+    const markedOther = item.matches(".msg-s-event-listitem--other") || !!item.querySelector(".msg-s-event-listitem--other");
+    if (markedOther || (contact && author && sameName(author, contact))) incoming.push(content);
+    else outgoingCount++;
+  }
   return { site: "linkedin", channel: "chat", contact, incoming, outgoingCount };
+}
+
+/** "Patel Harshil" vs "Patel Harshil (He/Him)": compare normalized names, allowing extra suffixes. */
+function sameName(a: string, b: string): boolean {
+  const n = (x: string) => x.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^\p{L}\p{N} ]/gu, "").replace(/\s+/g, " ").trim();
+  const [x, y] = [n(a), n(b)];
+  return !!x && !!y && (x === y || x.startsWith(y + " ") || y.startsWith(x + " "));
 }
 
 /** Telegram Web K (.bubble.is-in / .is-out) and Web A (.Message / .Message.own). */
